@@ -4,6 +4,20 @@
 #include "tokenizer.h"
 #include "parser.h"
 
+/** 
+ * Left associative:
+ * Grammar:
+ * E -> T E' 
+ * E' -> '*' T E' | empty 
+ * T -> F T'
+ * T' -> '/' F T' | empty
+ * F -> G F'
+ * F' -> '+' G F' | empty
+ * G -> H G'
+ * G' -> '-' H G' | empty
+ * H -> '(' E ')' | num
+ */
+
 /* Function Declarations */
 int E(char *tokens[], int *index);
 int T(char *tokens[], int *index);
@@ -86,3 +100,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

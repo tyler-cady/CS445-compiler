@@ -4,7 +4,11 @@
 #include <ctype.h>
 #include "tokenizer.h"
 
-void tokenize(char *input, char *tokens[], int *numTokens)
+#define EOL     256
+#define OP      257
+#define NUM     258
+
+int tokenize(char *input, char *tokens[], int *numTokens)
 {
     int i = 0;
     *numTokens = 0;
@@ -13,7 +17,6 @@ void tokenize(char *input, char *tokens[], int *numTokens)
     {
         if (isdigit(input[i]) || (input[i] == '.' && i > 0 && isdigit(input[i - 1])))
         {
-            // Handle numbers (including floating-point numbers)
             char buff[32];
             int j = 0;
 
@@ -28,8 +31,7 @@ void tokenize(char *input, char *tokens[], int *numTokens)
         }
         else if (strchr("+-*/()^", input[i]))
         {
-            // Handle operators and parentheses
-            tokens[*numTokens] = malloc(8); /* [op: ]\0 */
+            tokens[*numTokens] = malloc(8); 
             sprintf(tokens[*numTokens], "%c", input[i]);
             (*numTokens)++;
             i++;
@@ -50,6 +52,52 @@ void tokenize(char *input, char *tokens[], int *numTokens)
     tokens[*numTokens] = malloc(5);
     strcpy(tokens[*numTokens], "EOF");
     (*numTokens)++;
+    return 1; 
+}
+
+int get_token()
+{
+    int c, value;
+    while(1)
+    {
+        switch(c = fgetc(fp))
+        {
+            case '+':
+            case '*':
+            case '-':
+            case '/':
+                fprintf("OP:%c", c);
+                return OP;
+            case ' ':
+            case '\t':
+                continue; 
+            case '(':
+            case ')':
+                fprintf(stderr, "[%c]", c);
+            default:
+                if (isdigit(c))
+                {
+                    value = 0;
+                    do
+                    {
+                        value = 10*value + (c - '0');
+                    }
+                    while(isdigit(c=fgetc(fp)));
+                    ungetc(c,fp);
+                    fprintf(stderr, "[NUM: %d]", value);
+                    return NUM;
+                }
+                else if (c == '\n' || c == EOF)
+                {
+                    return EOL;
+                }
+                else 
+                {
+                    fprintf(stderr, "[Error: %c]", c);
+                    exit(1);
+                }
+        }
+    }
 }
 
 void test(int argc, char *argv[])
@@ -69,13 +117,7 @@ void test(int argc, char *argv[])
     for (int i = 0; i < numTokens; i++)
     {
         printf("%s", tokens[i]);
-        free(tokens[i]); // Free allocated memory
+        free(tokens[i]); 
     }
     printf("\n");
 }
-
-// int main(int argc, char *argv[])
-// {
-//     test(argc, argv);
-//     return 0;
-// }
