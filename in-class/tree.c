@@ -56,9 +56,11 @@ void print_tree(tree_t *t, int spaces)
 
     }
 }
+
+
 int eval_tree(tree_t *t)
 {
-    asert(t != NULL);
+    assert(t != NULL);
    
     switch(t -> type) 
     {
