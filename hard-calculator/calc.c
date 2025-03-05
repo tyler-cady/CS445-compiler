@@ -88,8 +88,9 @@ void stmt()
     {
         match(ID);
         match(ASSOP);
-        E();
+        tree_t *expr_tree = E();
         match(';');
+        int result = eval_tree(expr_tree);
     }
     else
     {
@@ -99,31 +100,33 @@ void stmt()
 }
 
 /* Expression parsing */
-int E() /* Handles addition */
+tree_t *E() /* Handles addition */
 {
-    int val = T();
+    tree_t *val = T();
     while (curr_token == '+')
     {
         match('+');
-        val += T();
+        tree_t *add_node = make_tree(ADDOP, '+', NULL, val, T());
+        val = add_node;
     }
     return val;
 }
 
-int T() /* Handles multiplication */
+tree_t *T() /* Handles multiplication */
 {
-    int val = F();
+    tree_t *val = F();
     while (curr_token == '*')
     {
         match('*');
-        val *= F();
+        tree_t *mul_node = make_tree(MULOP, '*', NULL, val, F());
+        val = mul_node;
     }
     return val;
 }
 
-int F() /* Handles parentheses and numbers */
+tree_t *F() /* Handles parentheses and numbers */
 {
-    int val;
+    tree_t *val;
     if (curr_token == '(')
     {
         match('(');
@@ -133,9 +136,9 @@ int F() /* Handles parentheses and numbers */
     }
     else if (curr_token == NUM)
     {
-        val = curr_attr;
+        int num = curr_attr;
         match(NUM);
-        return val;
+        return make_tree(NUM, num, NULL, NULL, NULL);
     }
     else
     {
@@ -227,6 +230,7 @@ int get_token()
     }
 }
 
+
 int main(int argc, char *argv[])
 {
     assert(argc >= 2);
@@ -234,6 +238,7 @@ int main(int argc, char *argv[])
 
     curr_token = get_token();
     program();
+
 
     if (curr_token == EOL)
         fprintf(stderr, "\nParsing complete.\n");

@@ -1,0 +1,4 @@
+Things to check:
+- Type mismatch
+- Uninitialized vars
+- Out of bounds array index (potentially in codegen phase)

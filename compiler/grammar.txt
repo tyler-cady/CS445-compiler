@@ -1,0 +1,132 @@
+GRAMMAR: Dragon 1+epsilon
+
+program 
+	-> PROGRAM ID  '(' identifier_list ')' ';' 
+	declarations
+	subprogram_declarations
+	compound_statement
+	'.'
+
+identifier_list 
+	-> ID 
+	| identifier_list ',' ID
+
+declarations 
+	-> declarations VAR identifier_list ':' type ';' 
+	| empty
+
+type 
+	-> standard_type 
+	| ARRAY '[' range ']' OF standard_type
+
+range 
+	-> INUM DOUBLEDOT INUM
+
+standard_type 
+	-> INTEGER 
+	| REAL
+
+subprogram_declarations 
+	-> subprogram_declarations sub_declaration ';' 
+	| empty
+
+subprogram_declaration 
+	-> subprogram_header 
+	declarations 
+	subprogram_declarations 
+	compound_statement
+
+subprogram_header 
+	-> FUNCTION ID arguments ':' standard_type ';' 
+	| PROCEDURE ID arguments ';'
+
+arguments 
+	-> '(' parameter_list ')' 
+	| empty
+
+parameter_list 
+	-> identifier_list ':' type
+	| parameter_list ';' identifier_list ':' type
+
+compound_statement 
+	-> BEGIN optional_statements END
+
+optional_statements 
+	-> statement_list
+	| empty
+
+statement_list 
+	-> statement
+	| statement_list ';' statement
+
+statement 
+	-> variable ASSIGNOP expression
+	| procedure_statement
+	| compound_statement
+	| IF expression THEN statement ELSE statement
+	| IF expression THEN statement
+	| WHILE expression DO statement
+	| REPEAT statement UNTIL expression
+	| FOR ID ASSIGNOP range DO statement
+
+statement
+	-> matched_stmt
+	| unmatched_stmt
+
+matched_stmt 
+	-> if expression then matched_stmt
+	| other
+
+unmatched_stmt
+	-> if expression then statement 
+	| if expression then matched_stmt else unmatched_stmt
+
+var -> ID
+	| ID '[' expression ']'
+
+procedure_statement 
+	-> ID 
+	| ID '(' expression_list ')'
+
+expression_list 
+	-> expression
+	| expression_list ',' expression
+
+expression 
+	-> simple_expression
+	| simple_expression RELOP simple_expression
+
+simple_expression 
+	-> term
+	| ADDOP term
+	| simple_expression ADDOP term
+
+term 
+	-> factor
+	| term MULOP factor
+
+factor -> ID
+	| ID '(' expression_list ')'
+	| ID '[' expression ']'
+	| NUM
+	| '(' expression ')'
+	| NOT factor
+
+
+LEXICAL RULES:
+1. Comments are surrounded by '{' and '}' or by "(*" and "*)". Comments may appear before any token.
+2. Blanks between tokens are optional.
+3. ID -> LETTER (LETTER | DIGIT)* where DIGIT -> [0-9] and LETTER -> [a-zA-Z]
+   There is no limit on identifier length.
+4. NUM -> INUM "." INUM where INUM -> DIGIT+
+5. Keywords are reserved and appear capitalized in the grammar.
+6. RELOP are "=", "<>", "<", "<=", ">", ">="
+7. ADDOP are "+", "-" and "or"
+8. MULOP are "*", "/", "div", "mod" and "and"
+9. ASSIGNOP is ":="
+10. DOUBLEDOT is ".."
+
+
+
+
+(fix dangling else pg. 174)

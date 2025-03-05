@@ -7,7 +7,8 @@
 #include <string.h>
 /* headers */
 #include "consts.h"
-
+#include "tree.h"
+#include "sym_table.h"
 
 
 FILE *fp;
@@ -25,5 +26,5 @@ void type();
 void cmpd_stmt();
 void opt_stmts();
 void stmt();
-int E(), T(), F();
+tree_t *E(), *T(), *F();
 

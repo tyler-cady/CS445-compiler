@@ -13,6 +13,7 @@ OUTPUT  : 20
         1. build syntax trees 
         2. evaluate syntax trees 
     d. (OPTIONAL BUT ENCOURAGED) change expression grammar to pascal (from webpage)
+    e. 
 
 2. Write a lex scanner and yacc parser for Dragon (pascal) grammar
 =======================
