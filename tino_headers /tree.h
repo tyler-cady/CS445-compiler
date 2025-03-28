@@ -1,4 +1,3 @@
-#pragma once 
 #include "hash.h"
 #include "list.h"
 

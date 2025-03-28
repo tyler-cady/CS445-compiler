@@ -5,10 +5,9 @@ YACC = bison -d -v
 
 SRC = pc.l pc.y
 OBJ = lex.yy.o pc.tab.o
-EXEC = parser
+EXEC = pc
 
-VERBOSE = 0  # Set this to 1 for verbose output
-
+VERBOSE = 0  
 ifeq ($(VERBOSE), 1)
     Q =
 else
@@ -33,4 +32,4 @@ lex.yy.o: lex.yy.c
 	$(Q)$(CC) $(CFLAGS) -c lex.yy.c
 
 clean:
-	$(Q)rm -f $(OBJ) pc.tab.c pc.tab.h lex.yy.c $(EXEC)
+	$(Q)rm -f $(OBJ) pc.tab.c pc.tab.h lex.yy.c pc.output $(EXEC)

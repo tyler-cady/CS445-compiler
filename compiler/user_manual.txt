@@ -1,0 +1,6 @@
+OVERVIEW: pascal compiler
+
+USAGE pc [options] file...
+
+OPIONS:
+    -v                  Verbose printed lex tokenization

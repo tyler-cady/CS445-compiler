@@ -1,0 +1,36 @@
+
+extern int yyerror(const char *s) {
+    static int last_error_line = -1;
+    
+    if (last_error_line == yylineno) return 0; 
+    last_error_line = yylineno;
+    fseek(yyin, 0, SEEK_SET); /* Reset file pointer to the beginning */
+    char buffer[1024];  // Buffer to store the line
+    int current_line = 1;
+
+    while (fgets(buffer, sizeof(buffer), yyin) && current_line < yylineno) {
+        current_line++;
+    }
+
+    buffer[strcspn(buffer, "\n")] = 0;
+
+    int width = snprintf(NULL, 0, "%d", yylineno);
+
+    // Manually find the column position of yytext
+    char *pos = strstr(buffer, yytext);
+    int error_col = (pos) ? (pos - buffer) + 1 : 1; // Default to 1 if not found
+    int error_len = strlen(yytext);  /* bad token length */
+    fprintf(stderr, "%s:%d: \033[1;31merror:\033[0m %s: '%s'\n", 
+            yyfilename ? yyfilename : "input", yylineno, s, yytext);
+    fprintf(stderr, "%*d | %s\n", width, yylineno, buffer);  
+    fprintf(stderr, "%*s |\033[0;32m", width, "");  
+
+    for (int i = 0; i < error_col - 1; i++) fprintf(stderr, " ");
+    
+    fprintf(stderr, " ^");
+    for (int i = 1; i < error_len; i++) fprintf(stderr, "~");
+    fprintf(stderr, "\033[0m\n"); 
+
+    return 1;
+}
+
