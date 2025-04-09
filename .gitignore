@@ -27,7 +27,7 @@ Thumbs.db
 
 
 not-compiler/
-tino-headers/
+
 
 # Ignore environment variable files
 .env
