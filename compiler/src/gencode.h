@@ -1,6 +1,6 @@
 #pragma once
-#include "structs/tree.h"
-#include "structs/hash.h"
+#include "tree.h"
+#include "hash.h"
 
 #define MAX_REGISTERS 16
 /**

@@ -1,9 +1,8 @@
 #ifndef TREE_H
 #define TREE_H
 
-#include "hash.h"
 #include "list.h"
-#include "pc.tab.h"
+#include "hash.h"
 
 
 
@@ -27,13 +26,13 @@ typedef struct tree_s
     struct tree_s *right;
 } tree_t;
 
-// typedef union {
-//     int ival;
-//     float rval;
-//     char *sval;
-// } tree_value_t;
+typedef union {
+    int ival;
+    float rval;
+    char *sval;
+} tree_value_t;
 
-tree_t *tree_make(int type, yystype attr, tree_t *left, tree_t *right);
+tree_t *tree_make(int type, tree_value_t attr, tree_t *left, tree_t *right);
 void tree_free(tree_t *t);
 tree_t *tree_make_inum(int attr);
 tree_t *tree_make_str(char *name);

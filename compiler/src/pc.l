@@ -6,13 +6,10 @@
     #include <stdlib.h>
     #include <string.h>
     #include <stdarg.h>
-    #include "pc.tab.h"
-    #include "pc.y"
-    #include "tree.h"
     #include "ptype.h"
-    #include "list.h"
-    #include "ltype.h"
     #include "error.h"
+    #include "tree.h"
+    #include "pc.tab.h"
 
     extern int yylineno;
     // extern char *yytext;
@@ -90,8 +87,6 @@ yylineno = 1;
 "and"           { echo("[MULOP: and]\n", verbose_flag); yylval.opval = AND; return MULOP; }
 ".."            { echo("[DOUBLEDOT]\n", verbose_flag); return DOUBLEDOT; }
 ":="            { echo("[ASSIGNOP]\n", verbose_flag); return ASSIGNOP; }
-"write"        { echo("[WRITE]\n", verbose_flag); return WRITE; }
-"read"         { echo("[READ]\n", verbose_flag); return READ; }
 ":"             { echo("[:]\n", verbose_flag); yylval.opval = COLON; return ':'; }
 ";"             { echo("[;]\n", verbose_flag); yylval.opval = SEMICOLON; return ';'; }
 ","             { echo("[,]\n", verbose_flag); yylval.opval = COMMA; return ','; }
@@ -147,19 +142,19 @@ extern int yyerror( const char *s ){
     static int last_error_line = -1;
     if (last_error_line == yylineno) return 0;
     last_error_line = yylineno;
-    error = get_error_text(yylineno, yyin, yyfilename);
+    char *error = get_error_text(yylineno, yyin, yyfilename);
     /* if s begins with 1, it is a warning */
     if (s[0] == '1') {
         // remove the first character from s
         s = ( s && *s) ? s + 1 : s;
-        message_enqueue(&error_warning, 1, 1, yyfilename, s, error, yylineno);
+        message_enqueue(&error_warning, 1, yyfilename, s, error, yylineno);
     } 
     else if (s[0] == '2') { /* error note */
         s = ( s && *s) ? s + 1 : s;
-        message_enqueue(&error_warning, 2, 1, yyfilename, s, error, yylineno);
+        message_enqueue(&error_warning, 2, yyfilename, s, error, yylineno);
     } 
     else {
-        message_enqueue(&error_warning, 0, 0, yyfilename, s, error, yylineno);
+        message_enqueue(&error_warning, 0, yyfilename, s, error, yylineno);
     }
     free(error);
     return 0;

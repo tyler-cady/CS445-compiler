@@ -2,12 +2,12 @@ SHELL  = bash
 TARGET = pc
 CC     = clang
 YACC   = bison
-LEX    = flex
+LEX    = lex
 
 CCFL := -c -g -Wall
-LDFL := -Wall -lfl -ly
+LDFL := -Wall -ll -ly
 
-SRCS := error.c list.c tree.c hash.c pc.tab.c pc.c gencode.c
+SRCS := error.c list.c tree.c hash.c pc.tab.c pc.c 
 
 # Construct file lists
 OBJS := $(addprefix build/obj/,$(patsubst %.c,%.o,$(SRCS)))

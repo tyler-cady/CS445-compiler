@@ -7,7 +7,6 @@
 #include "list.h"
 #include "tree.h"
 #include "ptype.h"
-#include "ltype.h"
 #include "util.h"
 
 #define MAX_ERRORS 20

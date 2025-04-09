@@ -16,4 +16,11 @@ typedef struct ptype_s {
     struct ptype_s *subtype; 
 } ptype_t;
 
+typedef struct ltype_s
+{
+    ptype_t *type;          /* Types: integer, real, etc. */
+    struct ltype_s *next;
+
+} ltype_t;
+
 #endif // PTYPE_H

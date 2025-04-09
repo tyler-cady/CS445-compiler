@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "error.h"
-tree_t *tree_make(int type, yystype attr, tree_t *left, tree_t *right) {
+#include "pc.tab.h"
+
+tree_t *tree_make(int type, tree_value_t attr, tree_t *left, tree_t *right) {
     tree_t *node = (tree_t *)malloc(sizeof(tree_t));
     if (!node) {
         error_fatal_malloc();
@@ -33,25 +35,25 @@ void tree_free(tree_t *t){
 }
 
 tree_t *tree_make_str(char *name){
-    yystype v;
+    tree_value_t v;
     v.sval = name;
     return tree_make(3, v, NULL, NULL);
 }
 
 tree_t *tree_make_inum(int attr){
-    yystype v;
+    tree_value_t v;
     v.ival = attr;
     return tree_make(1, v, NULL, NULL);
 }
 
 tree_t *tree_make_rnum(float attr){
-    yystype v;
+    tree_value_t v;
     v.rval = attr;
     return tree_make(2, v, NULL, NULL);
 }
 
 tree_t *tree_make_op(int opval, tree_t *left, tree_t *right){
-    yystype v;
+    tree_value_t v;
     v.ival = opval;
     return tree_make(4, v, left, right);
 }

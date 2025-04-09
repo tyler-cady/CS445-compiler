@@ -2,6 +2,7 @@
     "files.associations": {
         "list.h": "c",
         "error.h": "c",
-        "ptype.h": "c"
+        "ptype.h": "c",
+        "hash.h": "c"
     }
 }
