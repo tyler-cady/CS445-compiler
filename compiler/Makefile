@@ -1,6 +1,6 @@
 SHELL  = bash
 TARGET = pc
-CC     = clang
+CC     = gcc
 YACC   = bison
 LEX    = lex
 
