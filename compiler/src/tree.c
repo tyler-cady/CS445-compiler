@@ -73,7 +73,7 @@ char *lookup_type(tree_t *t){
     }
 }
 
-void print_tree(tree_t *t, int spaces){
+void tree_print(tree_t *t, int spaces){
     if (!t) return;
     for (int i = 0; i < spaces; i++) printf(" ");
     switch (t->type){
@@ -93,8 +93,8 @@ void print_tree(tree_t *t, int spaces){
             printf("Unknown type\n");
             break;
     }
-    print_tree(t->left, spaces + 2);
-    print_tree(t->right, spaces + 2);
+    tree_print(t->left, spaces + 2);
+    tree_print(t->right, spaces + 2);
 }
 
 static void tree_label( tree_t *n ){
@@ -145,7 +145,7 @@ void tree_set_type(tree_t *t, int type){
 //     tree_t *a = tree_make_name("a");
 //     tree_t *b = tree_make_assign(a, t3);
     
-//     print_tree(b, 0);
+//     tree_print(b, 0);
 //     tree_free(b);
 //     return 0;
 // }
