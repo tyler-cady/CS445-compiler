@@ -1,6 +1,8 @@
 OVERVIEW: pascal compiler
 
-USAGE pc [options] file...
-
+USAGE ./pc [options] file...
+or ./pc < file...
+USAGE 
 OPIONS:
     -v                  Verbose printed lex tokenization
+    

@@ -3,6 +3,8 @@
         "list.h": "c",
         "error.h": "c",
         "ptype.h": "c",
-        "hash.h": "c"
+        "hash.h": "c",
+        "tree.h": "c",
+        "ios": "c"
     }
 }

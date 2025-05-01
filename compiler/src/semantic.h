@@ -6,9 +6,64 @@
 #include "tree.h"
 #include "hash.h"
 #include "error.h"
-#include "pc.tab.h"
-#include "util.h"
 
 /* Semantic checks */
+
+/* Scoping Checks */
+/**
+ * 1. Semantic rules for Scoping
+ * 1.1. Local objects cannot be declared more than once
+ * 1.2. Local objects hide non-local objects with the same name
+ * 1.3. Non-local objects should be visible from inner scopes (unless a local object of the same name exists)
+ * 1.4. Function and procedure names exist in the scope they are defined (and not in their own scopes)
+ * 1.5. Local objects cease to exist once their scopes cease to exist
+ */
+int is_declared_in_scope(hash_t *table, char *name);
+int is_declared( hash_t *table, char *name );
+int check_local_hides_nonlocal(hash_t *table, char *name);
+void sem_set_types( tree_t *id_list, int type, int scopetype);
+/**
+ * 2. Semantic rules for Expressions
+ * 2.1. Expressions return typed-values
+ * 2.2. Objects must be declared before they used in expressions
+ * 2.3. Objects of different types cannot appear in the same expression (no type promotions)
+*/
+void check_expression(tree_t *tree, hash_t *table);
+int sem_get_type(tree_t *tree);
+int sem_assert_types(tree_t *left, tree_t *right, int type_assertion);
+int sem_check_types(tree_t *left, tree_t *right);
+/**
+ * 3. Semantic rules for Statements
+ * 3.1. Statements do not return values
+ * 3.2. The test expression for IF-THEN, IF-THEN-ELSE, WHILE-DO must be Boolean-valued; note that the Boolean type must be implicitly defined
+ * 3.3. The ELSE clause always binds to the closest IF (resolution of the dangling ELSE problem)
+ * 3.4. The variable type in FOR-DO must match the types of lower bound and upper bound expressions
+ */
+void check_statement(tree_t *tree, hash_t *table);
+ /**
+  * 4. Semantic rules for Arrays
+  * 4.1. Non-integer valued expressions cannot be used for indexing arrays
+  */
+void check_array(tree_t *tree, hash_t *table);
+void check_array_access(tree_t *tree, hash_t *table);
+/**
+ * 5. Semantic rules for Functions 
+ * 5.1. Function calls return values of type Integer or Real
+ * 5.2. Function must contain a "return" statement within its own body; this is of the form: <function_name> := <expression>
+ * 5.3. Functions must accept exactly the same number of arguments as is declared in its header, with the correct sequence of types
+ * 5.4. Functions are not allowed to update the value of nonlocal objects (via assignment statements)
+*/
+void check_function(tree_t *tree, hash_t *table);
+void check_function_call(tree_t *tree, hash_t *table);
+/**
+ * 6. Semantic rules for Procedures
+ * 6.1. Procedure calls do not return values
+ * 6.2. Procedures must accept exactly the same number of arguments as is 
+        declared in its header, with the correct sequence of types
+ */
+void check_procedure(tree_t *tree, hash_t *table);
+void check_procedure_call(tree_t *tree, hash_t *table);
+
+
 
 #endif // SEMANTIC_H

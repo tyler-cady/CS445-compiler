@@ -17,23 +17,16 @@ list_t *list_make(char *name) {
         exit(1);
     }
     
-    l->class = 0;
-    l->type = NULL;
+    l->class = 0; 
+    l->type = 0;
+    l->scopetype = 0;
+    l->args = NULL;
+    l->arg_types = NULL;
+    l->scope = NULL;
+    l->start_index = 0;
+    l->end_index = 0;
     l->next = NULL;
     return l;
-}
-
-
-lname_t *lname_make(list_t *nptr) {
-    lname_t *ln = (lname_t *)malloc(sizeof(lname_t));
-    if (!ln) {
-        fprintf(stderr, "Error: Failed to allocate memory for lname.\n");
-        exit(1);
-    }
-    
-    ln->nptr = nptr;
-    ln->next = NULL;
-    return ln;
 }
 
 
@@ -51,13 +44,7 @@ void list_free_all( list_t *node ){
         list_free(tmp);
     }
 }
-void lname_free(lname_t *node) {
-    while (node) {
-        lname_t *temp = node;
-        node = node->next;
-        free(temp);
-    }
-}
+
 
 /* Functions */
 list_t *list_search(list_t *top, char *name) {
@@ -74,14 +61,29 @@ list_t *list_insert( list_t *top, char *name ){
     l->next = top;
     return l;
 }
-lname_t *lname_append( lname_t *appendee, lname_t *to_append){ /* Concatenate to linked lists */
-    if ( !appendee ) return to_append;
-    lname_t *tmp = appendee;
-    while ( tmp->next ){
-        tmp = tmp->next;
+
+void list_print( list_t *top ){
+    while ( top ){
+        printf("%s -> ", top->name);
+        top = top->next;
     }
-    tmp->next = to_append;
-    return appendee;
+}
+
+char *get_list(list_t *top) {
+    char *result = NULL;
+    char *temp = NULL;
+
+    while (top) {
+        if (result == NULL) {
+            asprintf(&result, "%s", top->name);
+        } else {
+            asprintf(&temp, "%s -> %s", result, top->name);
+            free(result);
+            result = temp;
+        }
+        top = top->next;
+    }
+    return result ? result : strdup(""); 
 }
 
 

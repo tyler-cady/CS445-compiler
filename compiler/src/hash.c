@@ -1,8 +1,13 @@
-#include "hash.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "util.h"
+#include "error.h"
+#include "list.h"
+#include "hash.h"
+#include "semantic.h"
+#include "pc.tab.h"
 
 hash_t *hash_make() {
     hash_t *t = (hash_t*)malloc(sizeof(hash_t));
@@ -11,42 +16,26 @@ hash_t *hash_make() {
         exit(1);
     }
     t->capacity = MAX_CAPACITY;
+    t->next = NULL;
     memset(t->table, 0, sizeof(list_t *) * MAX_CAPACITY); 
     return t;
 }
-
 
 void hash_free(hash_t *table) {
     if (table) {
         for (size_t i = 0; i < table->capacity; i++) {
             list_t *entry = table->table[i];
             while (entry) {
-                list_t *temp = entry;
-                entry = entry->next;
-                free(temp->name);  
-                free(temp);         
+                list_t *next = entry->next;
+                free(entry->name);
+                free(entry);
+                entry = next;
             }
         }
-        free(table); 
+        free(table);
     }
 }
 
-
- 
-void hash_init( hash_t **top ){
-   if( !top ) return;
-   *top = hash_make();
-}
-
-void hash_exit( hash_t **top ){
-    if( !top || !*top ) return;
-    while ( *top )
-    {
-        hash_t *tmp = *top;
-        *top = ( *top )->next;
-        hash_free(tmp);
-    }
-}
 
 unsigned int hash_pjw( char *s, size_t table_size )
 {
@@ -55,7 +44,7 @@ unsigned int hash_pjw( char *s, size_t table_size )
     for ( p = s; *p != '\0'; p = p+1 )
     {
         h = (h << 4 ) + (*p); // multiply by 16
-        if ( g = h&0xf0000000) /* If g != 0 */
+        if (( g = h&0xf0000000)) /* If g != 0 */
         {
             h = h ^ (g >> 24);
             h = h ^ g;
@@ -65,23 +54,57 @@ unsigned int hash_pjw( char *s, size_t table_size )
 }
 
 list_t *hash_insert( hash_t *table, char *name ){
-    unsigned int index = hash_pjw(name, table->capacity);
-    list_t *entry = (list_t *)malloc(sizeof(list_t));
-    if (!entry)
-    {
-        fprintf(stderr, "Error: Failed to allocate memory for list entry\n");
-        exit(1);
+    if ( !table || !name ) return NULL;
+    if (is_declared_in_scope(table, name)) {
+        char *msg;
+        asprintf(&msg, "semantic error: '%s' is already declared in scope", name);
+        yyerror(msg);
+        free(msg);
+        return NULL;
     }
-    entry->name = strdup(name);
-    entry->next = table->table[index];
-    table->table[index] = entry;
-    return entry;
+    
+    unsigned int index = hash_pjw( name, table->capacity);
+
+    list_t *l = list_insert( table->table[index], name );
+    table->table[index] = l; /* Update the hash table */
+    if (strcmp(name, "input") == 0 || strcmp(name, "output") == 0)
+    {
+        l->class = PROCEDURE;
+        // fprintf(stderr, "Procedure: %s, at index: %d ", name, index);
+    }
+    else{
+        fprintf(stderr, "Inserted: %s, at index: %d ", name, index);
+    }
+    return l;
 }
+
+
+
+list_t *get_id_list(hash_t *t) {
+    if (!t) return NULL;
+    list_t *l = NULL;
+
+    for (int i = 0; i < t->capacity; i++) {
+        list_t *bucket = t->table[i];
+        while (bucket != NULL) {
+            l = list_insert(l, bucket->name); 
+            l->type = bucket->type;
+            l->start_index = bucket->start_index;
+            l->end_index = bucket->end_index;
+            bucket = bucket->next;
+        }
+    }
+
+    return l;
+}
+
+
 
 list_t *hash_search( hash_t *table, char *name ){
     if ( !table ||  !name ) return NULL;
     unsigned int index = hash_pjw( name, table->capacity);
-    return list_search(table->table[index], name);
+    list_t *l  = list_search( table->table[index], name );
+    return l;
 }
 
 list_t *hash_search_all( hash_t *table, char *name ){
@@ -94,6 +117,14 @@ list_t *hash_search_all( hash_t *table, char *name ){
     }
     return NULL; 
 }
+
+int hash_get_type(hash_t *table, char *name) {
+    if (!table || !name) return -1;
+    list_t *found = hash_search(table, name);
+    if (found) return found->type;
+    return -1;
+}
+
 list_t *hash_search_all_depth( hash_t *table, char *name, int *depth ){
     if ( !table || !name || !depth ) return NULL;
     *depth = 0;
@@ -107,79 +138,112 @@ list_t *hash_search_all_depth( hash_t *table, char *name, int *depth ){
     return NULL;
 }
 
-/* Stack Operations */
-hash_t *hash_pop( hash_t *top ){
-    if( !top ) return NULL;
-    hash_t *popped = top;
-    top = top->next; 
-    popped->next = NULL;
-    return popped; 
+list_t *hash_set_type(hash_t *table, char *name, int type, int scopetype) {
+    list_t *entry = hash_search_all(table, name);
+    if (!entry) {
+        fprintf(stderr, "hash_set_type: symbol '%s' not found\n", name);
+        return NULL;
+    }
+    entry->type = type;
+    entry->scopetype = scopetype;
+    return entry;
 }
 
-hash_t *hash_push( hash_t *top, hash_t *table ){
-    if (!table) return top;
-    table->next = top;
-    return table;
-} 
+list_t *hash_add_bounds(hash_t *table, char *name, int start_index, int end_index) {
+    list_t *entry = hash_search_all(table, name);
+    if (!entry) {
+        fprintf(stderr, "hash_add_bounds: symbol '%s' not found\n", name);
+        return NULL;
+    }
+    entry->start_index = start_index;
+    entry->end_index = end_index;
+    return entry;
+}
+
+hash_t *hash_pop( hash_t *top ){
+    assert( top != NULL );
+    hash_t *local = top->next;
+    hash_free( top );
+    return local;
+}
+
+hash_t *hash_push( hash_t *top ) {
+    hash_t *local = hash_make();
+    local->next = top;
+    return local;
+}
 
 void hash_print( hash_t *table)
 {
-
-    if (!table)
-    {
-        printf("Hash table is empty.\n");
-        return;
-    }
-
-    printf("Hash Table:\n");
-
-    for (unsigned int i = 0; i < table->capacity; i++)
-    {
-        list_t *entry = table->table[i];
-        if (entry)
-        {
-            printf("Bucket %u: ", i);
-            while (entry)
-            {
-                printf("%s -> ", entry->name);
-                entry = entry->next;
-            }
-            printf("NULL\n");
-        }
+    assert( table != NULL );
+    for ( int i = 0; i < MAX_CAPACITY; i++ ){
+        fprintf( stderr, "%d: %s", i, get_list(table->table[i]) );
+        // list_print( table->table[i] );
+        fprintf( stderr, "\n" );
     }
 }
 
+
 // int main(){
-//     /* test symbol table */
-//     hash_t *table = hash_make();
-//     hash_insert(table, "a");
-//     hash_insert(table, "b");
-//     hash_insert(table, "c");
-//     hash_insert(table, "d");
-//     hash_insert(table, "e");
-
-//     hash_print(table);
-
-//     list_t *found = hash_search(table, "c");
-//     if (found)
-//     {
-//         printf("Found: %s\n", found->name);
+//     hash_t *top = NULL;
+//     list_t *p = NULL;
+//     char buff[ 100 ];
+//     int choice;
+//     while (1){
+//         fprintf(stderr, "(0) Search (1) Global Search (2) Insert (3) Push (4) Pop (5) Print\n");
+//         scanf("%d", &choice);
+//         switch ( choice ){
+//             case 0:
+//                 fprintf(stderr, "Enter name: ");
+//                 scanf("%s", buff);
+//                 p = hash_search( top, buff );
+//                 if ( p ){
+//                     fprintf(stderr, "Found: %s\n", p->name);
+//                 } else {
+//                     fprintf(stderr, "Not Found\n");
+//                 }
+//                 break;
+//             case 1:
+//                 fprintf(stderr, "Enter name: ");
+//                 scanf("%s", buff);
+//                 p = hash_search_all( top, buff );
+//                 if ( p ){
+//                     fprintf(stderr, "Found: %s\n", p->name);
+//                 } else {
+//                     fprintf(stderr, "Not Found\n");
+//                 }
+//                 break;
+//             case 2:
+//                 fprintf(stderr, "Enter name: ");
+//                 scanf("%s", buff);
+//                 p = hash_insert( top, buff );
+//                 if ( p ){
+//                     fprintf(stderr, "Inserted: %s\n", p->name);
+//                 } else {
+//                     fprintf(stderr, "Insert Failed\n");
+//                 }
+//                 break;
+//             case 3:
+//                 top = hash_push( top );
+//                 fprintf(stderr, "Pushed new scope\n");
+//                 break;
+//             case 4:
+//                 top = hash_pop( top );
+//                 fprintf(stderr, "Popped scope\n");
+//                 break;
+//             case 5:
+//                 hash_print( top );
+//                 break;
+//             case 6:
+//                 fprintf(stderr, "Enter name: ");
+//                 scanf("%s", buff);
+//                 hash_set_type(top, buff, INTEGER, LOCAL);
+//                 list_t *l = hash_search_all(top, buff);
+//                 fprintf(stderr, "%d\n", l->type);
+//                 break;
+//             default:
+//                 fprintf(stderr, "Invalid choice\n");
+//                 break;
+//             }
 //     }
-//     else
-//     {
-//         printf("Not found\n");
-//     }
-
-//     hash_insert(table, "f");
-//     hash_insert(table, "g");
-//     hash_insert(table, "h");
-//     hash_print(table);
-//     list_t *result = hash_search(table, "g");
-//     if (result) {
-//         printf("Found: %s\n", result->name);
-//     } else {
-//         printf("Element not found.\n");
-//     }
-//     hash_free(table);
-//     return 0;
 // }

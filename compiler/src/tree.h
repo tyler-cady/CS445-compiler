@@ -1,23 +1,21 @@
 #ifndef TREE_H
 #define TREE_H
 
+
 #include "list.h"
-#include "hash.h"
-
-
 
 typedef struct tree_s 
 {
     int type; /* INUM, RNUM, ARRAY, FUNCTION, RELOP, ... etc.*/
-    
+
     union
     {
         int ival;       /* INUM */
         float rval;     /* RNUM */
-        list_t *sval;   /* NAME */
+        list_t *name_ptr;   /* NAME */
         int opval;      /* MULOP, ADDOP, ASSIGNOP */
-    }value;
-
+    } attr;
+ 
     int scope_depth;
     int label;
     int caller_is_parent;
@@ -26,20 +24,25 @@ typedef struct tree_s
     struct tree_s *right;
 } tree_t;
 
-typedef union {
-    int ival;
-    float rval;
-    char *sval;
-} tree_value_t;
-
-tree_t *tree_make(int type, tree_value_t attr, tree_t *left, tree_t *right);
 void tree_free(tree_t *t);
-tree_t *tree_make_inum(int attr);
-tree_t *tree_make_str(char *name);
-tree_t *tree_make_op(int opval, tree_t *left, tree_t *right);
-tree_t *tree_make_rnum(float attr);
-static void tree_label(tree_t *t);
-void tree_print(tree_t *t, int spaces);
-void tree_set_type(tree_t *t, int type);
+
+/* Makes */
+tree_t *tmake(int type, tree_t *left, tree_t *right);
+
+/* Type makes */
+tree_t *tmake_program(list_t *name, tree_t *args, tree_t *decls, tree_t *subprograms, tree_t *body);
+
+tree_t *tmake_inum(int ival);
+tree_t *tmake_rnum(float rval);
+tree_t *tmake_id(list_t *name_ptr);
+tree_t *tmake_type(int type);
+
+/* Operator makes */
+tree_t *tmake_mulop(int opval, tree_t *left, tree_t *right);
+tree_t *tmake_addop(int opval, tree_t *left, tree_t *right);
+tree_t *tmake_relop(int opval, tree_t *left, tree_t *right);
+
+const char *type_to_str(int type);
+void tprint(tree_t *t, int spaces);
 
 #endif // TREE_H

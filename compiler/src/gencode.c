@@ -2,44 +2,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pc.tab.h"
 
+/* x86 32 bit asm */
+extern FILE *out;
+extern reg_t *rstack;
 
-
-static int is_leftmost_leaf(tree_t *n){
-    if (!n) return 0;
-    if (n->left) return is_leftmost_leaf(n->left);
-    if (n->right) return 0;
-    return 1;
+void file_header(char *fname){
+    fprintf( out, "\t.file\t%s\n", fname );
+    fprintf( out, "\t.text\n" );
+    fprintf( out, "\t.intel_syntax noprefix\n" );
+}
+void file_footer(){
+    fprintf( out, "\t.size main, .-main\n" );
+    fprintf( out, "\t.ident\t\"GCC: (GNU) 11.5.0 20240719 (Red Hat 11.5.0-5)\"\n" );
+	fprintf( out, "\n\t.section\t.note.GNU-stack,\"\",@progbits\n" );
 }
 
-void push(int *stack, int *top, int val){
-    if (*top < MAX_REGISTERS){
-        (*top)++;
-        stack[*top] = val;
-    }
-    else {
-        fprintf(stderr, "Error: Stack overflow\n");
-        exit(1);
-    }
-}
-
-int pop(int *stack, int *top){
-    if (*top >= 0) return stack[(*top)--];
-    else {
-        fprintf(stderr, "Error: Stack underflow\n");
-        exit(1);
-    }
-}
-
-void swap(int *stack, int *top){
-    if (*top < 1){
-        fprintf(stderr, "Error: Not enough elements to swap\n");
-        exit(1);
-    }
-    int tmp = stack[*top];
-    stack[*top] = stack[*top - 1];
-    stack[*top - 1] = tmp;
-}
 
 
 static char *extension_to_asm(const char *filename) {
@@ -56,30 +35,17 @@ static char *extension_to_asm(const char *filename) {
     return new_filename;
 }
 
-void gencode(tree_t *node, char *filename){
-    filename = extension_to_asm(filename);
-    printf("Generating code to %s\n", filename);
-
-    FILE *f = fopen(filename, "w");
-    if (!f){
-        perror("Error opening file");
-        exit(1);
-    }
-
-    fprintf(f, ".intel_syntax noprefix\n");
-    fprintf(f, ".global _start\n");
-    fprintf(f, "_start:\n");
-
-    /* Case 0 */
-    if (is_leftmost_leaf(node)){
-        fprintf(f, "MOV rax, %d\n", name);
-        
-    }
-
+void gencode(tree_t *node ){
+ 
 }
 int main(){
-    tree_t *t = tree_make_inum(10);
-    gencode(t, "test.c");
-    return 0;
+    out = fopen( "output.asm", "w");
+    if (!out) {
+        perror("Failed to open file");
+        return 1;
+    }
 
+    file_header("output.c");
+    write_main_header();
+    return 0;
 }

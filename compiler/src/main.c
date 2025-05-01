@@ -4,9 +4,7 @@
 
 
 int main(){
-   
-    int b = 5.0;
-    int b = 1;
-    printf("%d\n", b);
+    char *c;
+    snprintf(&c, "hello %s", "hello");
     return 0;
 }
