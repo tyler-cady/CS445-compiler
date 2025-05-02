@@ -112,37 +112,25 @@ int main(int argc, char *argv[]);
 
 
 %start start
+
 %%
 
-start 
-    : program 
+start: program 
     { 
-        // fprintf(stderr, "[R-START]\n");
+        fprintf(stderr, "\n\nBEGIN PRINTING TREE:\n");
         tprint($1, 0);
+        fprintf(stderr, "\n\nEND PRINTING TREE.\n");
+		$$ = NULL;
     } 
     ;  
-
-//program 
-//    :
-//    PROGRAM ID '(' identifier_list ')' ';' declarations subprogram_declarations compound_statement '.' 
-//    {
-//        // fprintf(stderr, "[R-PROGRAM]\n");
-//        symbol_tbl = hash_push(symbol_tbl);
-//
-//        list = hash_insert(symbol_tbl, $2);
-//
-//        $$ = tmake_program( list , $4, $7, $8, $9 );
-//    }
-//   ;
 program: PROGRAM ID '(' identifier_list ')' ';' program_decl
     {
         // fprintf(stderr, "**program id insert**");
-        symbol_tbl = hash_push( symbol_tbl );
+        // REDUNDANT: symbol_tbl = hash_push( symbol_tbl );
         list = hash_insert( symbol_tbl, $2);
         tree_t* program_id = tmake_id( list );
         sem_set_types( program_id, PROCEDURE, PROCEDURE );
         $$ = tmake( PROG_DECL1, program_id, $7 );
-        
     }
     ;
 
@@ -152,24 +140,22 @@ program_decl: declarations subprogram_declarations compound_statement
     }
     ;
 
-identifier_list 
-    :ID 
+identifier_list: ID 
     {
         list = hash_insert( symbol_tbl, $1 );
-        // fprintf(stderr, "**id rule insert**");
+        fprintf( stderr, "\nINSERT[%s]\n", list->name );
         $$ = tmake( ID_LIST, NULL, tmake_id( list ));
     }
     | identifier_list ',' ID 
     {  
 
         list = hash_insert( symbol_tbl, $3 );
-        // fprintf(stderr, "**idlist rule insert**");
+        fprintf( stderr, "\nINSERT[%s]\n", list->name );
         $$ = tmake( ID_LIST, $1, tmake_id( list ));
     }   
     ;
 
-declarations 
-    : declarations VAR identifier_list ':' type ';' 
+declarations: declarations VAR identifier_list ':' type ';' 
     {
         sem_set_types($3, $5, LOCAL);     
         $$ = tmake( DECLS, $1, $3); 
@@ -352,6 +338,11 @@ statement_list: statement_list ';' statement
 
 statement: variable ASSIGNOP expression 
     {
+		fprintf(stderr, "\n\nBEGIN CHECKING ASSIGNMENT STATEMENT:\n\n");
+		tprint($1, 0);
+		tprint($3, 0);
+		fprintf(stderr, "\n\nEND CHECKING ASSIGNMENT STATEMENT:\n\n");
+
         int tvar = sem_get_type($1);
         int tassign = sem_get_type($3);
         fprintf(stderr, "[ASSIGNMENT %s = %s]\n", type_to_str(tvar), type_to_str(tassign));
@@ -369,7 +360,6 @@ statement: variable ASSIGNOP expression
         }
 
         $$ = tmake( ASSIGNOP, $1, $3 );
-        
     }
     | procedure_statement 
     {
@@ -436,7 +426,7 @@ statement: variable ASSIGNOP expression
 variable: ID '[' expression ']' 
     { 
         // fprintf(stderr, "[R-VARIABLE]\n");
-        if ( !is_declared(symbol_tbl, $1) ) {
+        if (is_declared(symbol_tbl, $1)) {
             char *msg;
             asprintf(&msg, "semantic error: variable %s not declared", $1);
             yyerror(msg);
@@ -453,7 +443,10 @@ variable: ID '[' expression ']'
     | ID 
     { 
         // fprintf(stderr, "[R-VARIABLE]\n");
-        fprintf(stderr, "\n\n[[I foolishly think that '%s' is the ID value]]\n\n", $1);
+        fprintf(stderr, "\n\n[[I foolishly think that {%s} is the ID value]]\n\n", $1);
+		list = hash_search_all(symbol_tbl, $1);
+		assert(list != NULL);
+        fprintf(stderr, "\nFOUND[%s,%d]\n", list->name, list->type);
         if ( !is_declared( symbol_tbl, $1 ) ) {
             char *msg;
             asprintf(&msg, "semantic error: variable %s not declared", $1);
@@ -461,7 +454,7 @@ variable: ID '[' expression ']'
             free(msg);
         }
         // fprintf(stderr, "rule is here");
-        $$ = tmake_id(hash_search_all(symbol_tbl, $1));
+        $$ = tmake_id(list);
 
     }
     ;
@@ -641,14 +634,13 @@ factor:ID
     {
         $$ = $2;
     }
-;
-
+	;
 
 
 %%
 
 int main(int argc, char *argv[]) {
-    symbol_tbl = hash_make();
+    symbol_tbl = hash_push( symbol_tbl );
     /* hash_insert_procedure("read", symbol_tbl);
     hash_insert_procedure("write", symbol_tbl); */
     fprintf(stderr, "%d", argc);
@@ -678,14 +670,16 @@ int main(int argc, char *argv[]) {
     }
     /* Parse the input */
     echo("\n\n****************TOKENS*****************\n\n", verbose_flag);
-    do {
+    //do {
         yyparse();
-    } while ( !feof(yyin) );
+    //} while ( !feof(yyin) );
     if (error_count > 0) {
         fprintf(stderr, "Parsing failed with %d errors\n", error_count);
         print_all_messages(&error_warning);
         exit(1);
     }
     fprintf( stderr, "Parsing succeeded\n" );
+
+	symbol_tbl = hash_pop( symbol_tbl );
     return 0;
 }

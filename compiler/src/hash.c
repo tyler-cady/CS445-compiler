@@ -101,7 +101,7 @@ list_t *get_id_list(hash_t *t) {
 
 
 list_t *hash_search( hash_t *table, char *name ){
-    if ( !table ||  !name ) return NULL;
+    if ( (table == NULL) ||  (name == NULL) ) return NULL;
     unsigned int index = hash_pjw( name, table->capacity);
     list_t *l  = list_search( table->table[index], name );
     return l;
@@ -112,7 +112,7 @@ list_t *hash_search_all( hash_t *table, char *name ){
     while ( table ) /* Traverse Scope Stack */
     {
         list_t *found = hash_search( table, name); /* Search Curr Scope */
-        if (found) return found;
+        if (found != NULL) return found;
         table = table->next; /* GOTO Parent Scope */
     }
     return NULL; 

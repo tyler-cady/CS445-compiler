@@ -4,7 +4,7 @@ CC     = gcc
 YACC   = bison
 LEX    = flex
 
-CCFL := -c -g3 -Wall -fsanitize=address
+CCFL := -std=gnu99 -D_GNU_SOURCE -c -g3 -Wall -fsanitize=address
 LDFL := -Wall -fsanitize=address -ll -ly
 
 SRCS := error.c list.c tree.c hash.c semantic.c pc.tab.c pc.c  

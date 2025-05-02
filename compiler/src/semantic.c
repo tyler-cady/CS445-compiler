@@ -74,7 +74,7 @@ void sem_set_types( tree_t *id_list, int type, int scopetype){
         list_t *l = hash_search_all(symbol_tbl, id_list->attr.name_ptr->name);
         hash_set_type( symbol_tbl, l->name, type, scopetype );
 
-        fprintf(stderr, "[set type: %d]\n", id_list->attr.name_ptr->type);
+        fprintf(stderr, "[set type: %s, %d]\n", id_list->attr.name_ptr->name, id_list->attr.name_ptr->type);
     }
     else if (id_list->type == ID_LIST) {
         sem_set_types(id_list->left, type, scopetype);
@@ -94,7 +94,7 @@ int sem_get_type( tree_t *t ){
          case FUNCTION:
          case PROCEDURE:
              id = hash_search_all( symbol_tbl, t->attr.name_ptr->name);
-             fprintf(stderr, "[ID TYPE FOUND: %d]", id->type);
+             fprintf(stderr, "[ID TYPE FOUND: %s, %d]", id->name, id->type);
              return id->type; 
          default:
              return t->type;

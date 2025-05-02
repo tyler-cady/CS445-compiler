@@ -1159,7 +1159,7 @@ YY_RULE_SETUP
 case 48:
 YY_RULE_SETUP
 #line 114 "src/pc.l"
-{ yylval.sval = yytext; echo("[ID:%s]", verbose_flag, yylval.sval); return ID; }
+{ yylval.sval = strdup(yytext); echo("[ID:%s]", verbose_flag, yylval.sval); return ID; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
@@ -2213,6 +2213,13 @@ void yyfree (void * ptr )
 
 
 int yyerror(const char *s) {
+
+	// shortcut: 
+//	fprintf( stderr, "ERROR:%s\n", s );
+	//exit(1);
+
+	// BUGGY: the code below ignores syntax errors reported by the parser!
+
     /* fprintf(stderr, "Error: %s at line %d, column %d\n", s, yylineno, yycolumn); */
     if (strcmp(s, "syntax error") == 0)
         return 0;
@@ -2227,20 +2234,17 @@ int yyerror(const char *s) {
     strncpy(last_error_msg, s, sizeof(last_error_msg));
     last_error_msg[sizeof(last_error_msg) - 1] = '\0';
 
-    char *line_content = get_error_text(yylineno, yyin, yyfilename);
+    char *line_content = get_error_text(yylineno -1 , yyin, yyfilename);
     
     if (!line_content) {
         return 0;
     }
-    message_enqueue(&error_warning, ERROR, yyfilename, s, line_content, yylineno, yycolumn);
+    message_enqueue(&error_warning, ERROR, yyfilename, s, line_content, yylineno -1, yycolumn);
 
     free(line_content);  
     error_count++;
     return 0;
 }
-
-
-
 
 int yywrap()
 {

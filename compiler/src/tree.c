@@ -42,7 +42,7 @@ tree_t *tmake_id(list_t *name_ptr) {
     tree_t *id = tmake(ID, NULL, NULL); 
     id->attr.name_ptr = name_ptr;
     id->type = ID;
-    name_ptr->type = VOID;
+    // THIS SEEMS TO BE THE BUG (WHY CLOBBER INTO VOID?): name_ptr->type = VOID;
     return id;
 }
 
@@ -124,6 +124,9 @@ const char *type_to_str(int type){
 
 
 void tprint(tree_t *t, int spaces) {
+	char *tmp_name;
+	list_t *tmp_node;
+
     if (!t) {
         if (verbose_flag) {
             for (int i = 0; i < spaces; i++) echo(" ", verbose_flag);
@@ -167,9 +170,10 @@ void tprint(tree_t *t, int spaces) {
                 echo("[ID LIST]\n", verbose_flag);
                 break;
             case ID:
-                char *name = t->attr.name_ptr->name;
-                int type = hash_search_all(symbol_tbl, name) -> type;
-                echo("[ID: %s: %d]\n", verbose_flag, name, type);
+                tmp_name = strdup(t->attr.name_ptr->name);
+				tmp_node = hash_search_all(symbol_tbl, tmp_name);
+                int type = tmp_node->type;
+                echo("[ID: %s: %d]\n", verbose_flag, tmp_name, type);
                 break;
             case RNUM:
                 echo("[RNUM:%f]\n", verbose_flag, t->attr.rval);
