@@ -131,7 +131,7 @@ program: PROGRAM ID '(' identifier_list ')' ';' program_decl
     }
     ;
 
-program_decl: declarations subprogram_declarations compound_statement
+program_decl: declarations subprogram_declarations compound_statement '.'
     {
         $$ = tmake( PROG_DECL1, $1, tmake( PROG_DECL2, $2, $3 ));
     }
@@ -196,6 +196,24 @@ range: '[' expression DOUBLEDOT expression ']'
             free(msg);
         }
         $$ = tmake(RANGE, $2, $4);
+    }
+    | expression DOUBLEDOT expression
+    {
+        tree_t *low = $1;
+        tree_t *high = $3;
+        char *msg;
+        if (!sem_assert_types(low, high, INTEGER)){
+            asprintf(&msg, "semantic error: for loop arguments must be of type integer");
+            yyerror(msg);
+            free(msg);
+        }
+        if (low > high) {
+            asprintf(&msg, "semantic error: for loop arguments must be in increasing order");
+            yyerror(msg);
+            free(msg);
+        }
+        $$ = tmake(RANGE, $1, $3);
+        $$ ->type
     }
     ;
 
@@ -383,17 +401,24 @@ statement: variable ASSIGNOP expression
         // fprintf(stderr, "[R-REPEAT_STATEMENT]\n");
         $$ = tmake( REPEAT, $2, $4 ); 
     }
-    | FOR ID ASSIGNOP expression range DO statement  
+    | FOR ID ASSIGNOP range DO statement  
     { 
-        // fprintf(stderr, "[R-FOR_STATEMENT\n]");
-        list = hash_search(symbol_tbl, $2);
-        if (is_declared_in_scope(symbol_tbl, $2)) {
-            char *msg;
-            asprintf(&msg, "semantic error: variable %s not declared", $2);
+        char *msg;
+
+        if ( !is_declared_in_scope(symbol_tbl, $2)) {
+            asprintf(&msg, "semantic error: variable '%s' is not declared", $2);
             yyerror(msg);
             free(msg);
+            if ( sem_get_type($2) != INTEGER ) {
+                asprintf(&msg, "semantic error: '%s' must be of type INTEGER", $2);
+                yyerror(msg);
+                free(msg);
+            }
         }
-        $$ = tmake( FOR, tmake( FOR_ARG, tmake_id( list ), $4), $7 );
+        // $$ = tmake( FOR, tmake( FOR_ARG, tmake_id( list ), $4), $7 );
+        list = hash_search(symbol_tbl, $2);
+        tree_t *assign = tmake(ASSIGNOP, tmake_id(list), $4);
+        $$ = tmake(FOR, assign, $6);
     }
     ;
 

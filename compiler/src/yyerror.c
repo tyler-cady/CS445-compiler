@@ -34,3 +34,36 @@ extern int yyerror(const char *s) {
     return 1;
 }
 
+int yyerror(const char *s) {
+
+	// shortcut: 
+	fprintf( stderr, "\n\033[1;31merror:\033[0m%s\n", s );
+	exit(1);
+
+	// BUGGY: the code below ignores syntax errors reported by the parser!
+
+    /* fprintf(stderr, "Error: %s at line %d, column %d\n", s, yylineno, yycolumn); */
+    if (strcmp(s, "syntax error") == 0)
+        return 0;
+
+    static int last_error_line = 0;
+    static char last_error_msg[256] = "";
+
+    if (last_error_line == yylineno && strcmp(last_error_msg, s) == 0)
+        return 0;
+
+    last_error_line = yylineno;
+    strncpy(last_error_msg, s, sizeof(last_error_msg));
+    last_error_msg[sizeof(last_error_msg) - 1] = '\0';
+
+    char *line_content = get_error_text(yylineno, yyin, yyfilename);
+    
+    if (!line_content) {
+        return 0;
+    }
+    message_enqueue(&error_warning, ERROR, yyfilename, s, line_content, yylineno, yycolumn);
+
+    free(line_content);  
+    error_count++;
+    return 0;
+}

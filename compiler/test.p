@@ -1,6 +1,7 @@
 program main( output );
-  var x: integer;
+  var i,j: integer;
 begin
-
-  for i := 
+  for i := 1 to 5 do
+  begin
+  end
 end.

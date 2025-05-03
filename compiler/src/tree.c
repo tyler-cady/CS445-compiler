@@ -170,7 +170,7 @@ void tprint(tree_t *t, int spaces) {
                 echo("[ID LIST]\n", verbose_flag);
                 break;
             case ID:
-                echo("[ID: %s]\n", verbose_flag);
+                echo("[ID]\n", verbose_flag);
                 break;
             case RNUM:
                 echo("[RNUM:%f]\n", verbose_flag, t->attr.rval);

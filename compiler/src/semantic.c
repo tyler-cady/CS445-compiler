@@ -82,7 +82,8 @@ int sem_get_type( tree_t *t ){
         case OROP:
         case ANDOP:
         case RELOP:
-            return t->left->type;
+        case RANGE:
+            return sem_get_type(t->left);
         default:
             return t->type;
      }
@@ -94,9 +95,9 @@ int sem_assert_types(tree_t *left, tree_t *right, int type_assertion){
     int l = sem_get_type(left);
     int r = sem_get_type(right);
     if ( l == r && r == type_assertion ) {
-        return 0;
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 int sem_check_types( tree_t *left, tree_t *right){
@@ -144,6 +145,7 @@ int sem_check_assign(tree_t *var, tree_t *assign ){
     }
     return 0;
 }
+
 int check_local_hides_nonlocal(hash_t *table, char *name){
     if (hash_search(table, name)->scopetype == LOCAL) return 0;
     else {
