@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#define MAX_ERRORS 20
+#define MAX_ERRORS 1
 
 #define ERROR 0
 #define WARNING 1

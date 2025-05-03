@@ -62,21 +62,29 @@ list_t *hash_insert( hash_t *table, char *name ){
         free(msg);
         return NULL;
     }
-    
-    unsigned int index = hash_pjw( name, table->capacity);
 
-    list_t *l = list_insert( table->table[index], name );
-    table->table[index] = l; /* Update the hash table */
-    if (strcmp(name, "input") == 0 || strcmp(name, "output") == 0)
-    {
-        l->class = PROCEDURE;
-        // fprintf(stderr, "Procedure: %s, at index: %d ", name, index);
-    }
-    else{
-        fprintf(stderr, "Inserted: %s, at index: %d ", name, index);
-    }
-    return l;
+    unsigned int index = hash_pjw(name, table->capacity);
+    list_t *l;
+
+    // if (strcmp(name, "input") == 0) {
+    //     l = list_insert(table->table[index], "read");
+    //     l->class = PROCEDURE;
+    //     table->table[index] = l;
+    //     return l;
+    // } else if (strcmp(name, "output") == 0) {
+    //     l = list_insert(table->table[index], "write");
+    //     l->class = PROCEDURE;
+    //     l->arg_types = malloc(sizeof(int));
+    //     l->arg_types[0] = INTEGER;
+    //     table->table[index] = l;
+    //     return l;
+    // } else {
+        l = list_insert(table->table[index], name);
+        table->table[index] = l;
+        return l;
+    // }
 }
+
 
 
 
@@ -160,6 +168,16 @@ list_t *hash_add_bounds(hash_t *table, char *name, int start_index, int end_inde
     return entry;
 }
 
+list_t *hash_init_symbol(hash_t *table, char *name){
+    list_t *entry = hash_search(table, name);
+    if (!entry) {
+        fprintf(stderr, "hash init: symbol '%s' not found\n", name);
+        return NULL;
+    }
+    entry->initialized = 1;
+    return entry;
+}
+
 hash_t *hash_pop( hash_t *top ){
     assert( top != NULL );
     hash_t *local = top->next;
@@ -184,66 +202,66 @@ void hash_print( hash_t *table)
 }
 
 
-// int main(){
-//     hash_t *top = NULL;
-//     list_t *p = NULL;
-//     char buff[ 100 ];
-//     int choice;
-//     while (1){
-//         fprintf(stderr, "(0) Search (1) Global Search (2) Insert (3) Push (4) Pop (5) Print\n");
-//         scanf("%d", &choice);
-//         switch ( choice ){
-//             case 0:
-//                 fprintf(stderr, "Enter name: ");
-//                 scanf("%s", buff);
-//                 p = hash_search( top, buff );
-//                 if ( p ){
-//                     fprintf(stderr, "Found: %s\n", p->name);
-//                 } else {
-//                     fprintf(stderr, "Not Found\n");
-//                 }
-//                 break;
-//             case 1:
-//                 fprintf(stderr, "Enter name: ");
-//                 scanf("%s", buff);
-//                 p = hash_search_all( top, buff );
-//                 if ( p ){
-//                     fprintf(stderr, "Found: %s\n", p->name);
-//                 } else {
-//                     fprintf(stderr, "Not Found\n");
-//                 }
-//                 break;
-//             case 2:
-//                 fprintf(stderr, "Enter name: ");
-//                 scanf("%s", buff);
-//                 p = hash_insert( top, buff );
-//                 if ( p ){
-//                     fprintf(stderr, "Inserted: %s\n", p->name);
-//                 } else {
-//                     fprintf(stderr, "Insert Failed\n");
-//                 }
-//                 break;
-//             case 3:
-//                 top = hash_push( top );
-//                 fprintf(stderr, "Pushed new scope\n");
-//                 break;
-//             case 4:
-//                 top = hash_pop( top );
-//                 fprintf(stderr, "Popped scope\n");
-//                 break;
-//             case 5:
-//                 hash_print( top );
-//                 break;
-//             case 6:
-//                 fprintf(stderr, "Enter name: ");
-//                 scanf("%s", buff);
-//                 hash_set_type(top, buff, INTEGER, LOCAL);
-//                 list_t *l = hash_search_all(top, buff);
-//                 fprintf(stderr, "%d\n", l->type);
-//                 break;
-//             default:
-//                 fprintf(stderr, "Invalid choice\n");
-//                 break;
-//             }
-//     }
-// }
+//  int main(){
+//      hash_t *top = NULL;
+//      list_t *p = NULL;
+//      char buff[ 100 ];
+//      int choice;
+//      while (1){
+//          fprintf(stderr, "(0) Search (1) Global Search (2) Insert (3) Push (4) Pop (5) Print\n");
+//          scanf("%d", &choice);
+//          switch ( choice ){
+//              case 0:
+//                  fprintf(stderr, "Enter name: ");
+//                  scanf("%s", buff);
+//                  p = hash_search( top, buff );
+//                  if ( p ){
+//                      fprintf(stderr, "Found: %s\n", p->name);
+//                  } else {
+//                      fprintf(stderr, "Not Found\n");
+//                  }
+//                  break;
+//              case 1:
+//                  fprintf(stderr, "Enter name: ");
+//                  scanf("%s", buff);
+//                  p = hash_search_all( top, buff );
+//                  if ( p ){
+//                      fprintf(stderr, "Found: %s\n", p->name);
+//                  } else {
+//                      fprintf(stderr, "Not Found\n");
+//                  }
+//                  break;
+//              case 2:
+//                  fprintf(stderr, "Enter name: ");
+//                  scanf("%s", buff);
+//                  p = hash_insert( top, buff );
+//                  if ( p ){
+//                      fprintf(stderr, "Inserted: %s\n", p->name);
+//                  } else {
+//                      fprintf(stderr, "Insert Failed\n");
+//                  }
+//                  break;
+//              case 3:
+//                  top = hash_push( top );
+//                  fprintf(stderr, "Pushed new scope\n");
+//                  break;
+//              case 4:
+//                  top = hash_pop( top );
+//                  fprintf(stderr, "Popped scope\n");
+//                  break;
+//              case 5:
+//                  hash_print( top );
+//                  break;
+//              case 6:
+//                  fprintf(stderr, "Enter name: ");
+//                  scanf("%s", buff);
+//                  hash_set_type(top, buff, INTEGER, LOCAL);
+//                  list_t *l = hash_search_all(top, buff);
+//                  fprintf(stderr, "%d\n", l->type);
+//                  break;
+//              default:
+//                  fprintf(stderr, "Invalid choice\n");
+//                  break;
+//              }
+//      }
+//  }

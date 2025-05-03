@@ -14,13 +14,13 @@
     int yycolumn = 0;
     int tok_start;
 
-    #define YY_USER_ACTION                    \
-    tok_start  = yylineno;            \
-                                            \
-    if (yytext[0] == '\n')                  \
-        yycolumn = 1;                         \
-    else                                    \
-        yycolumn += strlen(yytext);          \
+    // #define YY_USER_ACTION                    \
+    // tok_start  = yylineno;            \
+    //                                         \
+    // if (yytext[0] == '\n')                  \
+    //     yycolumn = 1;                         \
+    // else                                    \
+    //     yycolumn += strlen(yytext);          \
                                             
 
     // extern char *yytext;
@@ -85,6 +85,8 @@ commentparens (\(\*.*\*\))
 "else"          { echo("[ELSE]", verbose_flag); return ELSE; }
 "for"           { echo("[FOR]", verbose_flag); return FOR; }
 "not"           { echo("[NOT]", verbose_flag); return NOT; }
+"read"          { echo("[READ]", verbose_flag); return READ; }
+"write"         { echo("[WRITE]", verbose_flag); return WRITE; }
 "+"             { echo("[ADDOP: +]", verbose_flag); yylval.opval = PLUS; return ADDOP; }
 "-"             { echo("[ADDOP: -]", verbose_flag); yylval.opval = MINUS; return ADDOP; }
 "or"            { echo("[ADDOP: or]", verbose_flag); return OROP; }
@@ -100,6 +102,7 @@ commentparens (\(\*.*\*\))
 "mod"           { echo("[MULOP: mod]", verbose_flag); yylval.opval = MOD; return MULOP; }
 "and"           { echo("[MULOP: and]", verbose_flag); yylval.opval = ANDOP; return ANDOP; }
 ".."            { echo("[DOUBLEDOT]", verbose_flag); return DOUBLEDOT; }
+"to"            { echo("[DOUBLEDOT]", verbose_flag); return DOUBLEDOT; }
 ":="            { echo("[ASSIGNOP]", verbose_flag); return ASSIGNOP; }
 ":"             { echo("[:]", verbose_flag); yylval.opval = COLON; return ':'; }
 ";"             { echo("[;]", verbose_flag); yylval.opval = SEMICOLON; return ';'; }
@@ -108,6 +111,7 @@ commentparens (\(\*.*\*\))
 ")"             { echo("[)]", verbose_flag); yylval.opval = P; return ')'; }
 "["             { echo("[[]", verbose_flag); yylval.opval = B; return '['; }
 "]"             { echo("[]]", verbose_flag); yylval.opval = B; return ']'; }
+"\""            { echo("[\"]", verbose_flag); return QQ; }
 "."             { echo("[.]", verbose_flag); return '.'; }
 {number}        { yylval.ival = atoi(yytext); echo("[%d]", verbose_flag, yylval.ival); return INUM; }
 {floating}      { yylval.rval = atof(yytext); echo("[%.2f]", verbose_flag, yylval.rval); return RNUM; }
@@ -122,8 +126,8 @@ commentparens (\(\*.*\*\))
 int yyerror(const char *s) {
 
 	// shortcut: 
-//	fprintf( stderr, "ERROR:%s\n", s );
-	//exit(1);
+	/* fprintf( stderr, "ERROR:%s\n", s );
+	exit(1); */
 
 	// BUGGY: the code below ignores syntax errors reported by the parser!
 
@@ -131,7 +135,7 @@ int yyerror(const char *s) {
     if (strcmp(s, "syntax error") == 0)
         return 0;
 
-    static int last_error_line = -1;
+    static int last_error_line = 0;
     static char last_error_msg[256] = "";
 
     if (last_error_line == yylineno && strcmp(last_error_msg, s) == 0)
@@ -141,12 +145,12 @@ int yyerror(const char *s) {
     strncpy(last_error_msg, s, sizeof(last_error_msg));
     last_error_msg[sizeof(last_error_msg) - 1] = '\0';
 
-    char *line_content = get_error_text(yylineno -1 , yyin, yyfilename);
+    char *line_content = get_error_text(yylineno, yyin, yyfilename);
     
     if (!line_content) {
         return 0;
     }
-    message_enqueue(&error_warning, ERROR, yyfilename, s, line_content, yylineno -1, yycolumn);
+    message_enqueue(&error_warning, ERROR, yyfilename, s, line_content, yylineno, yycolumn);
 
     free(line_content);  
     error_count++;

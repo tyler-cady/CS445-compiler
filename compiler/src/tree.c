@@ -170,10 +170,7 @@ void tprint(tree_t *t, int spaces) {
                 echo("[ID LIST]\n", verbose_flag);
                 break;
             case ID:
-                tmp_name = strdup(t->attr.name_ptr->name);
-				tmp_node = hash_search_all(symbol_tbl, tmp_name);
-                int type = tmp_node->type;
-                echo("[ID: %s: %d]\n", verbose_flag, tmp_name, type);
+                echo("[ID: %s]\n", verbose_flag);
                 break;
             case RNUM:
                 echo("[RNUM:%f]\n", verbose_flag, t->attr.rval);

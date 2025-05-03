@@ -26,6 +26,7 @@ list_t *list_make(char *name) {
     l->start_index = 0;
     l->end_index = 0;
     l->next = NULL;
+    l->initialized = 0;
     return l;
 }
 

@@ -1,5 +1,6 @@
-program main( input, output );
-  var a: integer;
+program main( output );
+  var x: integer;
 begin
-  a:= 1 or 2
+
+  for i := 
 end.

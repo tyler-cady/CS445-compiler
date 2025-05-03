@@ -20,7 +20,7 @@
    int *args;        /* For functions */
    int *arg_types;
    int *scope;       /* For functions */
-   
+   int initialized;
    int start_index;     /* For arrays */
    int end_index;       /* For arrays */
 } list_t;

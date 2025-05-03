@@ -22,6 +22,7 @@ int is_declared_in_scope(hash_t *table, char *name);
 int is_declared( hash_t *table, char *name );
 int check_local_hides_nonlocal(hash_t *table, char *name);
 void sem_set_types( tree_t *id_list, int type, int scopetype);
+int is_initialized(char *name);
 /**
  * 2. Semantic rules for Expressions
  * 2.1. Expressions return typed-values
@@ -32,6 +33,7 @@ void check_expression(tree_t *tree, hash_t *table);
 int sem_get_type(tree_t *tree);
 int sem_assert_types(tree_t *left, tree_t *right, int type_assertion);
 int sem_check_types(tree_t *left, tree_t *right);
+int sem_check_assign(tree_t *var, tree_t *assign);
 /**
  * 3. Semantic rules for Statements
  * 3.1. Statements do not return values

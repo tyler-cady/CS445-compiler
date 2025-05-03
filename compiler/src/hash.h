@@ -39,7 +39,7 @@ list_t *hash_insert_procedure( hash_t *table, char *name, int arg_count, int *ar
 list_t *hash_insert_array( hash_t *table, char *name, int type, int start_index, int end_index );
 list_t *hash_set_type(hash_t *table, char *name, int type, int scopetype);
 list_t *hash_add_bounds(hash_t *table, char *name, int start_index, int end_index);
-
+list_t *hash_init_symbol(hash_t *table, char *name);
 
 int hash_get_type( hash_t *table, char *name );
 /* Stack Operations */

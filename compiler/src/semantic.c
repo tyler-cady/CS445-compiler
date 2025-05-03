@@ -47,25 +47,6 @@ int is_declared( hash_t *table, char *name ){
     return 0;
 }
 
-// tree_t sem_set_type( tree_t *t, int type ){
-//     if( !t ) return;
-//     tree_t *l, *r;
-//     l = t->left;
-//     r = t->right;
-
-//     if ( !l || !r ) t->type = type;
-//     else if ( r ) r->type = type;
-//     else if ( l ) l->type = type;
-//     else {
-//         t->type = type;
-//         // if ( t->attr.name_ptr ) t->attr.name_ptr->type = type;
-//     }
-//     fprintf(stderr, "[set type: %d]\n", type);
-//     sem_set_type(l, type);
-//     return t;
-// }
-
-
 void sem_set_types( tree_t *id_list, int type, int scopetype){
     if (!id_list) return;
     if (id_list->type == ID) {
@@ -74,7 +55,7 @@ void sem_set_types( tree_t *id_list, int type, int scopetype){
         list_t *l = hash_search_all(symbol_tbl, id_list->attr.name_ptr->name);
         hash_set_type( symbol_tbl, l->name, type, scopetype );
 
-        fprintf(stderr, "[set type: %s, %d]\n", id_list->attr.name_ptr->name, id_list->attr.name_ptr->type);
+        // fprintf(stderr, "[set type: %s, %d]\n", id_list->attr.name_ptr->name, id_list->attr.name_ptr->type);
     }
     else if (id_list->type == ID_LIST) {
         sem_set_types(id_list->left, type, scopetype);
@@ -89,15 +70,21 @@ int sem_get_type( tree_t *t ){
      list_t *id; 
      if ( !t ) return ERROR; 
      switch ( t->type ){
-         case ID:
-         case ARRAY:
-         case FUNCTION:
-         case PROCEDURE:
-             id = hash_search_all( symbol_tbl, t->attr.name_ptr->name);
-             fprintf(stderr, "[ID TYPE FOUND: %s, %d]", id->name, id->type);
-             return id->type; 
-         default:
-             return t->type;
+        case ID:
+        case ARRAY:
+        case FUNCTION:
+        case PROCEDURE:
+            id = hash_search_all( symbol_tbl, t->attr.name_ptr->name);
+        //  fprintf(stderr, "[ID TYPE FOUND: %s, %d]", id->name, id->type);
+            return id->type; 
+        case ADDOP:
+        case MULOP:
+        case OROP:
+        case ANDOP:
+        case RELOP:
+            return t->left->type;
+        default:
+            return t->type;
      }
 
 }
@@ -122,6 +109,41 @@ int sem_check_types( tree_t *left, tree_t *right){
     return 1;
 }
 
+int is_initialized(char *name){
+    if ( hash_search(symbol_tbl, name)->initialized) return 1;
+    else return 0;                         
+}
+
+int sem_check_assign(tree_t *var, tree_t *assign ){
+    if (!var || !assign) return 1;
+    int tvar = sem_get_type(var);
+    int tassign = sem_get_type(assign);
+    char *msg;
+    hash_init_symbol(symbol_tbl, var->attr.name_ptr->name);
+
+    if ( assign->type == ID){
+        is_initialized(assign->attr.name_ptr->name);
+        if (!is_declared_in_scope(symbol_tbl, assign->attr.name_ptr->name)){
+            asprintf(&msg, "semantic error: '%s' is not declared in the scope", assign->attr.name_ptr->name);
+            yyerror(msg);
+            return 1;
+        }
+    } 
+    
+    if ( tassign == PROCEDURE ) {
+        asprintf(&msg, "semantic error: cannot assign to var( '%s' )", var ? var->attr.name_ptr->name : NULL);
+        yyerror(msg);
+        free(msg);
+        return 1;
+    }
+    else if ( tvar != tassign ) {
+        asprintf(&msg, "semantic error: cannot assign '%s' to '%s'", type_to_str(tvar), type_to_str(tassign));
+        yyerror(msg);
+        free(msg);
+        return 1;
+    }
+    return 0;
+}
 int check_local_hides_nonlocal(hash_t *table, char *name){
     if (hash_search(table, name)->scopetype == LOCAL) return 0;
     else {

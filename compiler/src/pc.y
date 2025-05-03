@@ -11,7 +11,7 @@
 #include "hash.h"
 #include "semantic.h"
 
-#define MAX_ERRORS 20
+#define MAX_ERRORS 1
 
 extern int yylex();       /* Declare yylex() */
 extern int yylineno;
@@ -43,6 +43,7 @@ int main(int argc, char *argv[]);
 %token FUNC_CALL STMT_LIST CMPND_STMT DECLS SUBPROG_DECLS PARAM_LIST 
 %token RANGE EXPR_LIST PROC_CALL ARRAY_CALL SUBPROG_DECL FOR_ARG ID_LIST
 %token PARAMETER LOCAL
+%token READ WRITE QQ
 
 %token VOID
 %token BEGINKW END
@@ -117,16 +118,12 @@ int main(int argc, char *argv[]);
 
 start: program 
     { 
-        fprintf(stderr, "\n\nBEGIN PRINTING TREE:\n");
         tprint($1, 0);
-        fprintf(stderr, "\n\nEND PRINTING TREE.\n");
 		$$ = NULL;
     } 
     ;  
 program: PROGRAM ID '(' identifier_list ')' ';' program_decl
     {
-        // fprintf(stderr, "**program id insert**");
-        // REDUNDANT: symbol_tbl = hash_push( symbol_tbl );
         list = hash_insert( symbol_tbl, $2);
         tree_t* program_id = tmake_id( list );
         sem_set_types( program_id, PROCEDURE, PROCEDURE );
@@ -143,14 +140,12 @@ program_decl: declarations subprogram_declarations compound_statement
 identifier_list: ID 
     {
         list = hash_insert( symbol_tbl, $1 );
-        fprintf( stderr, "\nINSERT[%s]\n", list->name );
         $$ = tmake( ID_LIST, NULL, tmake_id( list ));
     }
     | identifier_list ',' ID 
     {  
 
         list = hash_insert( symbol_tbl, $3 );
-        fprintf( stderr, "\nINSERT[%s]\n", list->name );
         $$ = tmake( ID_LIST, $1, tmake_id( list ));
     }   
     ;
@@ -257,7 +252,7 @@ subprogram_header: FUNCTION ID
         tree_t *t = tmake_id( list );
         sem_set_types(t, $6, FUNCTION);
 
-        t->type = $6;
+        // t->type = $6;
         $$ = tmake( FUNCTION, t , $4);
         $$->type = $6;
 
@@ -266,19 +261,18 @@ subprogram_header: FUNCTION ID
     | PROCEDURE ID 
     { 
         // fprintf(stderr, "[R-SUBPROGRAM_HEADER]\n");
-        if ( is_declared_in_scope(symbol_tbl, $2) ) {
+        if ( !is_declared_in_scope(symbol_tbl, $2) ) {
             char *msg;
             asprintf(&msg, "semantic error: procedure %s already declared", $2);
             yyerror(msg);
             free(msg);
         }
-        fprintf(stderr, "**proc id rule insert**");
         list = hash_insert(symbol_tbl, $2);
         symbol_tbl = hash_push( symbol_tbl); 
     } 
     arguments ';' 
     { 
-        if ( is_declared_in_scope(symbol_tbl, $2) ) {
+        if ( !is_declared_in_scope(symbol_tbl, $2) ) {
             char *msg;
             asprintf(&msg, "semantic error: procedure %s already declared", $2);
             yyerror(msg);
@@ -298,7 +292,7 @@ arguments: '(' parameter_list ')' { $$ = $2; }
 parameter_list: identifier_list ':' type 
     {
         // fprintf(stderr, "[R-PARAMETER_LIST]\n");
-        sem_set_types($1, $3, PARAMETER);     
+        sem_set_types($1, $3, PARAMETER);
         $$ = tmake( PARAM_LIST, $1, NULL );
     }
     | parameter_list ';' identifier_list ':' type 
@@ -338,28 +332,8 @@ statement_list: statement_list ';' statement
 
 statement: variable ASSIGNOP expression 
     {
-		fprintf(stderr, "\n\nBEGIN CHECKING ASSIGNMENT STATEMENT:\n\n");
-		tprint($1, 0);
-		tprint($3, 0);
-		fprintf(stderr, "\n\nEND CHECKING ASSIGNMENT STATEMENT:\n\n");
-
-        int tvar = sem_get_type($1);
-        int tassign = sem_get_type($3);
-        fprintf(stderr, "[ASSIGNMENT %s = %s]\n", type_to_str(tvar), type_to_str(tassign));
-        if ( tassign == PROCEDURE ) {
-            char *msg;
-            asprintf(&msg, "semantic error: cannot assign to var( '%s' )", $1 ? $1->attr.name_ptr->name : NULL);
-            yyerror(msg);
-            free(msg);
-        }
-        else if ( tvar != tassign ) {
-            char *msg;
-            asprintf(&msg, "semantic error: cannot assign '%s' to '%s'", type_to_str(tvar), type_to_str(tassign));
-            yyerror(msg);
-            free(msg);
-        }
-
-        $$ = tmake( ASSIGNOP, $1, $3 );
+        if (sem_check_assign($1, $3)) $$ = tmake( ASSIGNOP, $1, $3 );
+        else $$ = NULL;
     }
     | procedure_statement 
     {
@@ -443,11 +417,9 @@ variable: ID '[' expression ']'
     | ID 
     { 
         // fprintf(stderr, "[R-VARIABLE]\n");
-        fprintf(stderr, "\n\n[[I foolishly think that {%s} is the ID value]]\n\n", $1);
-		list = hash_search_all(symbol_tbl, $1);
+       list = hash_search_all(symbol_tbl, $1);
 		assert(list != NULL);
-        fprintf(stderr, "\nFOUND[%s,%d]\n", list->name, list->type);
-        if ( !is_declared( symbol_tbl, $1 ) ) {
+       if ( !is_declared( symbol_tbl, $1 ) ) {
             char *msg;
             asprintf(&msg, "semantic error: variable %s not declared", $1);
             yyerror(msg);
@@ -455,6 +427,7 @@ variable: ID '[' expression ']'
         }
         // fprintf(stderr, "rule is here");
         $$ = tmake_id(list);
+        
 
     }
     ;
@@ -462,7 +435,7 @@ variable: ID '[' expression ']'
 procedure_statement: ID '(' expression_list ')' {
         char *msg;
         if ( !is_declared( symbol_tbl, $1 ) ) {
-            asprintf(&msg, "semantic error: procedure %s not declared", $1);
+            asprintf(&msg, "semantic error: procedure '%s' not declared", $1);
             yyerror(msg);
             free(msg);
         }
@@ -474,7 +447,7 @@ procedure_statement: ID '(' expression_list ')' {
     { 
         char *msg;
         if ( !is_declared( symbol_tbl, $1 )) {
-            asprintf(&msg, "semantic error: procedure %s not declared", $1);
+            asprintf(&msg, "semantic error: procedure '%s' not declared", $1);
             yyerror(msg);
             free(msg);
         }
@@ -635,6 +608,21 @@ factor:ID
         $$ = $2;
     }
 	;
+
+/* in_list: ID
+    | in_list ',' ID
+    ;
+out_list: out_token
+    | out_list ',' out_token
+    ;
+out_token: ID
+    | INUM
+    | RNUM
+    | QQ ID QQ
+    ;
+io_rule: WRITE '(' out_list ')'
+    | READ '(' in_list ')'
+    ; */
 
 
 %%

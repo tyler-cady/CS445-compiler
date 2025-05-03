@@ -64,14 +64,14 @@ void error_print(message_queue_t *queue) {
         if (current->type == ERROR) {
             int width = snprintf(NULL, 0, "%d", current->line_no);
             // char *pos = strstr(current->line_text, current->error_msg);
-            int error_col = current->column-1;
+            // int error_col = current->column;
             // int error_len = strlen(current->error_msg);
             fprintf(stderr, "%s:%d: \033[1;31merror:\033[0m %s\n",current->filename, current->line_no, current->error_msg);
             fprintf(stderr, "%*d | %s\n", width, current->line_no, current->line_text);
-            fprintf(stderr, "%*s |\033[0;32m", width, "");
-            for (int i = 0; i < error_col - 1; i++) fprintf(stderr, " ");
-            fprintf(stderr, "^");
-            fprintf(stderr, "\033[0m\n");
+            fprintf(stderr, "%*s |\n", width, "");
+            // for (int i = 0; i < error_col - 1; i++) fprintf(stderr, " ");
+            // fprintf(stderr, "^");
+            // fprintf(stderr, "\033[0m\n");
         } else if (current->type == ERROR_NOTE) {
             note_print(current);
             break;  
