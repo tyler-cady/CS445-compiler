@@ -28,7 +28,7 @@ unsigned int hash_pjw( char *name, size_t table_size);
 list_t *get_id_list( hash_t *t);
 
 list_t *hash_search( hash_t *table, char *name );
-list_t *hash_search_all( hash_t *table, char *name ); 
+list_t *hash_global_search( hash_t *table, char *name ); 
 list_t *hash_search_all_depth( hash_t *table, char *name, int *depth );
 
 list_t *hash_insert( hash_t *table, char *name );

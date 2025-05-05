@@ -10,7 +10,7 @@
 int main(){
     hash_t *table = hash_make();
     // hash_insert(table, "a");
-    tree_t *n = tree_make_id(hash_search_all(table, "a"), NULL, NULL);
+    tree_t *n = tree_make_id(hash_global_search(table, "a"), NULL, NULL);
     tree_print(n, 0);
     tree_free(n);
     hash_free(table);

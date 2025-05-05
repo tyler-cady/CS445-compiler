@@ -5,6 +5,10 @@
         "ptype.h": "c",
         "hash.h": "c",
         "tree.h": "c",
-        "ios": "c"
+        "ios": "c",
+        "type_traits": "c",
+        "deque": "c",
+        "string": "c",
+        "vector": "c"
     }
 }

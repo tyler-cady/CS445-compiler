@@ -17,10 +17,11 @@
    int scopetype;        /* LOCAL, GLOBAL, PARAMETER */
    struct list_s *next;
 
-   int *args;        /* For functions */
    int *arg_types;
-   int *scope;       /* For functions */
+   int return_type;
+
    int initialized;
+   
    int start_index;     /* For arrays */
    int end_index;       /* For arrays */
 } list_t;

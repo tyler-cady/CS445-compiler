@@ -42,7 +42,7 @@ int is_declared_in_scope(hash_t *table, char *name) {
 
 int is_declared( hash_t *table, char *name ){
     if (!table || !name) return 0;
-    list_t *found = hash_search_all(table, name);
+    list_t *found = hash_global_search(table, name);
     if (found) return 1;
     return 0;
 }
@@ -52,7 +52,7 @@ void sem_set_types( tree_t *id_list, int type, int scopetype){
     if (id_list->type == ID) {
         // id_list->attr.name_ptr->type = type;
         // id_list->attr.name_ptr->scopetype = scopetype;
-        list_t *l = hash_search_all(symbol_tbl, id_list->attr.name_ptr->name);
+        list_t *l = hash_global_search(symbol_tbl, id_list->attr.name_ptr->name);
         hash_set_type( symbol_tbl, l->name, type, scopetype );
 
         // fprintf(stderr, "[set type: %s, %d]\n", id_list->attr.name_ptr->name, id_list->attr.name_ptr->type);
@@ -66,29 +66,53 @@ void sem_set_types( tree_t *id_list, int type, int scopetype){
     }
 }
 
-int sem_get_type( tree_t *t ){
-     list_t *id; 
-     if ( !t ) return ERROR; 
-     switch ( t->type ){
-        case ID:
-        case ARRAY:
-        case FUNCTION:
-        case PROCEDURE:
-            id = hash_search_all( symbol_tbl, t->attr.name_ptr->name);
-        //  fprintf(stderr, "[ID TYPE FOUND: %s, %d]", id->name, id->type);
-            return id->type; 
-        case ADDOP:
-        case MULOP:
-        case OROP:
-        case ANDOP:
-        case RELOP:
-        case RANGE:
-            return sem_get_type(t->left);
-        default:
-            return t->type;
-     }
+int sem_get_type( tree_t* t ) {
+    list_t *id;
+	if(t == NULL) return ERROR;
+	int left_type, right_type;
 
+	switch( t->type ) {
+	case ID:
+        id = hash_global_search(symbol_tbl, t->attr.name_ptr->name);
+        if (!id) return ERROR;
+        return id->type;
+	case INTEGER:
+	case INUM:
+		return INTEGER;
+	case REAL:
+	case RNUM:
+		return REAL;
+	case MULOP:
+	case ADDOP:
+		left_type = sem_get_type( t->left );
+		right_type = sem_get_type( t->right );
+
+		if( left_type != right_type ) {
+			fprintf(stderr, "ERROR: type mismatch in %s, recieved %d and %d\n", ((t->type) == ADDOP ? "ADDOP" : "MULOP"), left_type, right_type );
+			exit(1);
+		}
+
+		return left_type;
+	case RELOP:
+	case AND:
+	case OR:
+		return BOOL;
+	case IARRAY:
+		return INTEGER;
+	case RARRAY:
+		return REAL;
+	case ARRAY_CALL:
+		int array_type = t->left->attr.opval;
+		if(array_type == IARRAY)	return INTEGER;
+		else if(array_type == RARRAY)	return REAL;
+		return array_type;
+	case FUNC_CALL:
+		return sem_get_type( t->left );
+	default:
+		return ERROR;
+	}
 }
+
 
 int sem_assert_types(tree_t *left, tree_t *right, int type_assertion){
     if (!left || !right) return 0;
@@ -111,23 +135,55 @@ int sem_check_types( tree_t *left, tree_t *right){
 }
 
 int is_initialized(char *name){
-    if ( hash_search(symbol_tbl, name)->initialized) return 1;
+    if ( hash_global_search(symbol_tbl, name)->initialized) return 1;
     else return 0;                         
 }
 
 int sem_check_assign(tree_t *var, tree_t *assign ){
     if (!var || !assign) return 1;
     int tvar = sem_get_type(var);
-    int tassign = sem_get_type(assign);
+    int tassign =  sem_get_type(assign);
     char *msg;
-    hash_init_symbol(symbol_tbl, var->attr.name_ptr->name);
+    /* Initialize the var id */
+    char *name;
+    if (var->type == ID){
+        name = var->attr.name_ptr->name;
+        hash_init_symbol(symbol_tbl, name);
+    }
+    if (tvar == IARRAY || tvar == RARRAY){
+        name = var->left->attr.name_ptr->name;
+        hash_init_symbol(symbol_tbl, name );
 
-    if ( assign->type == ID){
-        is_initialized(assign->attr.name_ptr->name);
-        if (!is_declared_in_scope(symbol_tbl, assign->attr.name_ptr->name)){
-            asprintf(&msg, "semantic error: '%s' is not declared in the scope", assign->attr.name_ptr->name);
+        /* Set types to integer and real for type checking */
+        if( tvar == IARRAY ) tvar = INTEGER;
+        if( tvar == RARRAY ) tvar = REAL;
+       
+        if( tassign == IARRAY ) tassign = INTEGER;
+        if( tassign == RARRAY ) tassign = REAL;
+    }
+    // if (tvar == FUNC_CALL ){
+    //     fprintf(stderr, "\n{{ FUNC CALL TVAR }}\n");
+    //     name = var->attr.name_ptr->name;
+    //     hash_init_symbol(symbol_tbl, name);
+    // }
+
+    if ( assign->type == ID || assign->type == IARRAY || assign->type == RARRAY){
+
+        if ( !is_initialized( name )){
+            asprintf(&msg, "semantic error: '%s' is not initialized", name);
             yyerror(msg);
             return 1;
+        }
+        list_t *list = hash_global_search(symbol_tbl, name);
+        if (list){
+            if (!is_declared_in_scope(symbol_tbl, name) && list->scopetype != FUNCTION){
+                asprintf(&msg, "semantic error: '%s' is not declared in the scope", name);
+                yyerror(msg);
+                return 1;
+            }
+            if (list->scopetype == FUNCTION){
+                hash_init_symbol(symbol_tbl, name);
+            }
         }
     } 
     
@@ -137,7 +193,8 @@ int sem_check_assign(tree_t *var, tree_t *assign ){
         free(msg);
         return 1;
     }
-    else if ( tvar != tassign ) {
+
+    else if ( tvar != tassign) {
         asprintf(&msg, "semantic error: cannot assign '%s' to '%s'", type_to_str(tvar), type_to_str(tassign));
         yyerror(msg);
         free(msg);
@@ -150,7 +207,7 @@ int check_local_hides_nonlocal(hash_t *table, char *name){
     if (hash_search(table, name)->scopetype == LOCAL) return 0;
     else {
         /* check if a non-local var is found in outer scopes*/
-        if ( hash_search_all(table, name) ) {
+        if ( hash_global_search(table, name) ) {
             return 0;
         }
     }
@@ -164,23 +221,54 @@ int check_local_hides_nonlocal(hash_t *table, char *name){
 int check_nonlocal_visibility(hash_t *table, char *name){
     /* Checks if it exists locally -- local overrides global */
     if (hash_search(table, name)) return 0; /* Symbol exists in the current scope */
-    if (hash_search_all(table, name)) return 0; /* Symbol exists somewhere */
+    if (hash_global_search(table, name)) return 0; /* Symbol exists somewhere */
     char *msg;
     asprintf(&msg, "semantic error: '%s' is not declared", name);
     yyerror(msg);
     free(msg);
     return 1;
 }
+int count_tree_ids(tree_t *t) {
+    if (!t) return 0;
+    int count = (t->type == ID) ? 1 : 0;
+    if(t->left) count += count_tree_ids(t->left);
+    if (t->right) count += count_tree_ids(t->right);
+    return count;
+}
+
+int fill_argtypes(tree_t *t, int *types, int index) {
+    if (!t) return index;
+    if (t->type == ID) {
+        types[index++] = hash_search(symbol_tbl, t->attr.name_ptr->name)->type;
+    }
+    if(t->left) index = fill_argtypes(t->left, types, index);
+    if(t->right) index = fill_argtypes(t->right, types, index);
+    return index;
+}
+
+int *sem_get_argtype(tree_t *args) {
+    int count = count_tree_ids(args);
+    int *types = malloc(count * sizeof(int));
+    if (!types) {
+        perror("malloc failed");
+        exit(1);
+    }
+    fill_argtypes(args, types, 0);
+    return types;
+}
+
+void sem_print_argtypes(int *args, int count) {
+    for (int i = 0; i < count; i++) {
+        printf("arg[%d] = %d\n", i, args[i]);
+    }
+}
+
 
 // int main(){
-
-//    symbol_tbl = hash_make();
-//    symbol_tbl = hash_push(symbol_tbl);
-//    hash_insert(symbol_tbl, "F");
-//    symbol_tbl = hash_push(symbol_tbl);
-//    tree_t *t = tmake_id(hash_search_all(symbol_tbl, "F"));
-//    fprintf(stderr, "\n%s\n", t->attr.name_ptr->name);
-//    tree_t *a = tmake(ASSIGNOP, t, tmake_inum( 5 ) );
-//    sem_set_types(t, INTEGER, LOCAL);
-//    printf("\ntype:%d\n", sem_get_type(a->left));
+//     list_t *list = list_make("x");
+//     tree_t *addop = tmake(ADDOP, tmake_inum(5), tmake_inum(10));
+//     tree_t *f = tmake(ASSIGNOP, tmake_id(list), addop);
+//     tprint(f, 0);
+//     fprintf(stderr, "TYPE: %d\n", sem_get_type(f));
 // }
+

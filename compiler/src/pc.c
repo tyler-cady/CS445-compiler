@@ -1119,7 +1119,7 @@ YY_RULE_SETUP
 case 39:
 YY_RULE_SETUP
 #line 105 "src/pc.l"
-{ echo("[DOUBLEDOT]", verbose_flag); return DOUBLEDOT; }
+{ echo("[TO]", verbose_flag); return TO; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
@@ -1200,7 +1200,7 @@ case 55:
 /* rule 55 can match eol */
 YY_RULE_SETUP
 #line 121 "src/pc.l"
-{ fprintf(stderr, "\n"); yycolumn = 1;}
+{ fprintf(stderr, "\n"); }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
@@ -2239,7 +2239,7 @@ void yyfree (void * ptr )
 
 int yyerror(const char *s) {
     static int last_error_line = -1;
-    
+    /* yylineno -= 1; */
     if (last_error_line == yylineno) return 0; 
     last_error_line = yylineno;
     fseek(yyin, 0, SEEK_SET); /* Reset file pointer to the beginning */
@@ -2258,8 +2258,8 @@ int yyerror(const char *s) {
     char *pos = strstr(buffer, yytext);
     int error_col = (pos) ? (pos - buffer) + 1 : 1; // Default to 1 if not found
     int error_len = strlen(yytext);  /* bad token length */
-    fprintf(stderr, "\n%s:%d: \033[1;31merror:\033[0m %s: '%s'\n", 
-            yyfilename ? yyfilename : "input", yylineno, s, yytext);
+    fprintf(stderr, "\n%s:%d: \033[1;31merror:\033[0m %s\n", 
+            yyfilename ? yyfilename : "input", yylineno, s);
     fprintf(stderr, "%*d | %s\n", width, yylineno, buffer);  
     fprintf(stderr, "%*s |\033[0;32m", width, "");  
 
@@ -2269,7 +2269,7 @@ int yyerror(const char *s) {
     for (int i = 1; i < error_len; i++) fprintf(stderr, "~");
     fprintf(stderr, "\033[0m\n"); 
 
-    return 1;
+    exit(1);
 }
 
 int yywrap()

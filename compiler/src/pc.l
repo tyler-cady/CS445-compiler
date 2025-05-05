@@ -102,7 +102,7 @@ commentparens (\(\*.*\*\))
 "mod"           { echo("[MULOP: mod]", verbose_flag); yylval.opval = MOD; return MULOP; }
 "and"           { echo("[MULOP: and]", verbose_flag); yylval.opval = ANDOP; return ANDOP; }
 ".."            { echo("[DOUBLEDOT]", verbose_flag); return DOUBLEDOT; }
-"to"            { echo("[DOUBLEDOT]", verbose_flag); return DOUBLEDOT; }
+"to"            { echo("[TO]", verbose_flag); return TO; }
 ":="            { echo("[ASSIGNOP]", verbose_flag); return ASSIGNOP; }
 ":"             { echo("[:]", verbose_flag); yylval.opval = COLON; return ':'; }
 ";"             { echo("[;]", verbose_flag); yylval.opval = SEMICOLON; return ';'; }
@@ -118,14 +118,14 @@ commentparens (\(\*.*\*\))
 {name}          { yylval.sval = strdup(yytext); echo("[ID:%s]", verbose_flag, yylval.sval); return ID; }
 " "             { echo(" ", verbose_flag);}
 "\t"            { echo("\t", verbose_flag);}
-"\n"            { fprintf(stderr, "\n"); yycolumn = 1;}
+"\n"            { fprintf(stderr, "\n"); }
 "\0"            { return 0;}
 .               { echo("[ERROR: %s]",verbose_flag, yytext); yyerror("Invalid token"); }
 %%
 
 int yyerror(const char *s) {
     static int last_error_line = -1;
-    
+    /* yylineno -= 1; */
     if (last_error_line == yylineno) return 0; 
     last_error_line = yylineno;
     fseek(yyin, 0, SEEK_SET); /* Reset file pointer to the beginning */
@@ -144,8 +144,8 @@ int yyerror(const char *s) {
     char *pos = strstr(buffer, yytext);
     int error_col = (pos) ? (pos - buffer) + 1 : 1; // Default to 1 if not found
     int error_len = strlen(yytext);  /* bad token length */
-    fprintf(stderr, "\n%s:%d: \033[1;31merror:\033[0m %s: '%s'\n", 
-            yyfilename ? yyfilename : "input", yylineno, s, yytext);
+    fprintf(stderr, "\n%s:%d: \033[1;31merror:\033[0m %s\n", 
+            yyfilename ? yyfilename : "input", yylineno, s);
     fprintf(stderr, "%*d | %s\n", width, yylineno, buffer);  
     fprintf(stderr, "%*s |\033[0;32m", width, "");  
 
@@ -155,7 +155,7 @@ int yyerror(const char *s) {
     for (int i = 1; i < error_len; i++) fprintf(stderr, "~");
     fprintf(stderr, "\033[0m\n"); 
 
-    return 1;
+    exit(1);
 }
 
 int yywrap()

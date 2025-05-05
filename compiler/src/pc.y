@@ -22,6 +22,7 @@ extern int error_count;
 // tree_t *tree;
 hash_t *symbol_tbl;
 list_t *list;
+tree_t *temp; 
 message_context_t error_warning = {0};
 int main(int argc, char *argv[]);
 %}
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]);
 %token FUNC_CALL STMT_LIST CMPND_STMT DECLS SUBPROG_DECLS PARAM_LIST 
 %token RANGE EXPR_LIST PROC_CALL ARRAY_CALL SUBPROG_DECL FOR_ARG ID_LIST
 %token PARAMETER LOCAL
-%token READ WRITE QQ
+%token READ WRITE QQ TO
 
 %token VOID
 %token BEGINKW END
@@ -81,7 +82,7 @@ int main(int argc, char *argv[]);
 %type <tval> program_decl
 %type <tval> declarations
 %type <ival> type
-%type <tval> range
+%type <tval> range range_val
 %type <tval> subprogram_declarations
 %type <tval> statement 
 %type <tval> expression
@@ -92,11 +93,12 @@ int main(int argc, char *argv[]);
 %type <tval> procedure_statement
 %type <tval> compound_statement
 %type <tval> identifier_list
-%type <ival> standard_type
+%type <ival> standard_type 
 %type <tval> subprogram_declaration subprogram_header
 %type <tval> arguments parameter_list
 %type <tval> optional_statements statement_list 
-%type <opval> UMINUS 
+
+
 
 %nonassoc ELSEFIX
 %left OROP
@@ -122,16 +124,16 @@ start: program
 		$$ = NULL;
     } 
     ;  
-program: PROGRAM ID '(' identifier_list ')' ';' program_decl
+program:{ symbol_tbl = hash_push(symbol_tbl); } PROGRAM ID '(' identifier_list ')' ';' program_decl '.' {symbol_tbl = hash_pop(symbol_tbl);}
     {
-        list = hash_insert( symbol_tbl, $2);
+        list = hash_insert( symbol_tbl, $3);
         tree_t* program_id = tmake_id( list );
         sem_set_types( program_id, PROCEDURE, PROCEDURE );
-        $$ = tmake( PROG_DECL1, program_id, $7 );
+        $$ = tmake( PROG_DECL1, program_id, $8 );
     }
     ;
 
-program_decl: declarations subprogram_declarations compound_statement '.'
+program_decl: declarations subprogram_declarations compound_statement
     {
         $$ = tmake( PROG_DECL1, $1, tmake( PROG_DECL2, $2, $3 ));
     }
@@ -152,7 +154,14 @@ identifier_list: ID
 
 declarations: declarations VAR identifier_list ':' type ';' 
     {
-        sem_set_types($3, $5, LOCAL);     
+        sem_set_types($3, $5, LOCAL);
+
+
+        if($5 == IARRAY || $5 == RARRAY){
+            list = hash_global_search(symbol_tbl, $3->right->attr.name_ptr->name);
+            assert(list != NULL);
+            hash_add_bounds(symbol_tbl, list->name , temp->right->attr.ival, temp->left->attr.ival);
+        }
         $$ = tmake( DECLS, $1, $3); 
     }
     | { $$ = NULL; } /* empty */   
@@ -179,14 +188,14 @@ type: standard_type { $$ = $1; }
     }
    ;
 
-range: '[' expression DOUBLEDOT expression ']' 
+range: range_val DOUBLEDOT range_val  
     {
         // fprintf(stderr, "[R-RANGE]");
-        tree_t *low = $2;
-        tree_t *high = $4;
+        tree_t *low = $1;
+        tree_t *high = $3;
         char *msg;
         if (!sem_assert_types(low, high, INTEGER)){
-            asprintf(&msg, "semantic error: array indicies must be of type integer");
+            asprintf(&msg, "semantic error: array indicies must be of type INTEGER");
             yyerror(msg);
             free(msg);
         }
@@ -195,28 +204,32 @@ range: '[' expression DOUBLEDOT expression ']'
             yyerror(msg);
             free(msg);
         }
-        $$ = tmake(RANGE, $2, $4);
+        $$ = tmake(RANGE, $1, $3);
+        temp = $$;
     }
-    | expression DOUBLEDOT expression
+    | range_val TO range_val
     {
+        // fprintf(stderr, "[R-RANGE]");
         tree_t *low = $1;
         tree_t *high = $3;
         char *msg;
         if (!sem_assert_types(low, high, INTEGER)){
-            asprintf(&msg, "semantic error: for loop arguments must be of type integer");
+            asprintf(&msg, "semantic error: array indicies must be of type INTEGER");
             yyerror(msg);
             free(msg);
         }
         if (low > high) {
-            asprintf(&msg, "semantic error: for loop arguments must be in increasing order");
+            asprintf(&msg, "semantic error: array indicies must be in increasing order");
             yyerror(msg);
             free(msg);
         }
         $$ = tmake(RANGE, $1, $3);
-        $$ ->type
+        temp = $$;
     }
     ;
-
+range_val: INUM { $$ = tmake_inum($1); }
+    | RNUM { $$ = tmake_rnum($1);}
+    ;
 standard_type: INTEGER 
     { 
         $$ = INTEGER; 
@@ -253,53 +266,69 @@ subprogram_declaration:
 
 subprogram_header: FUNCTION ID 
     { 
-        fprintf(stderr, "**func id insert**");
         list = hash_insert( symbol_tbl, $2 ); 
         symbol_tbl = hash_push(symbol_tbl); 
+
     }
     arguments ':' standard_type ';'
     { 
+        char *msg;
         if ( is_declared_in_scope(symbol_tbl, $2) ) {
-            char *msg;
-            asprintf(&msg, "semantic error: function %s already declared", $2);
+            asprintf(&msg, "semantic error: function '%s' already declared", $2);
             yyerror(msg);
             free(msg);
         }
 
-        list = hash_search(symbol_tbl, $2);
+        list = hash_global_search(symbol_tbl, $2);
+        assert(list != NULL);
+        list->arg_types = sem_get_argtype($4);
+        list->return_type = $6;
+        // list->type = FUNCTION;
+        assert(list->arg_types != NULL);
         tree_t *t = tmake_id( list );
         sem_set_types(t, $6, FUNCTION);
 
-        // t->type = $6;
-        $$ = tmake( FUNCTION, t , $4);
-        $$->type = $6;
+        // if( !list->initialized ){
+        //     asprintf(&msg, "semantic error: function '%s' does not return a value", $2);
+        //     yyerror(msg);
+        //     free(msg);
+        // }
 
+        $$ = tmake( FUNCTION, t , $4);
 
     } 
     | PROCEDURE ID 
     { 
         // fprintf(stderr, "[R-SUBPROGRAM_HEADER]\n");
-        if ( !is_declared_in_scope(symbol_tbl, $2) ) {
-            char *msg;
-            asprintf(&msg, "semantic error: procedure %s already declared", $2);
+        char *msg;
+        if ( is_declared(symbol_tbl, $2) ) {
+            asprintf(&msg, "semantic error: procedure '%s' already declared", $2);
             yyerror(msg);
             free(msg);
         }
         list = hash_insert(symbol_tbl, $2);
+        if( list->initialized ){
+            asprintf(&msg, "semantic error: procedure '%s' should not return a value", $2);
+            yyerror(msg);
+            free(msg);
+        }
         symbol_tbl = hash_push( symbol_tbl); 
     } 
     arguments ';' 
     { 
-        if ( !is_declared_in_scope(symbol_tbl, $2) ) {
+        if ( !is_declared(symbol_tbl, $2) ) {
             char *msg;
-            asprintf(&msg, "semantic error: procedure %s already declared", $2);
+            asprintf(&msg, "semantic error: procedure '%s' is not declared", $2);
             yyerror(msg);
             free(msg);
         }
-        list = hash_search(symbol_tbl, $2);
+        list = hash_global_search(symbol_tbl, $2);
+        list->arg_types = sem_get_argtype($4);
+
         tree_t *t = tmake_id( list );
         sem_set_types(t, PROCEDURE, PROCEDURE);
         $$ = tmake( PROCEDURE, t , $4);
+        // symbol_tbl = hash_pop(symbol_tbl);
     }
     ;
 
@@ -312,6 +341,7 @@ parameter_list: identifier_list ':' type
         // fprintf(stderr, "[R-PARAMETER_LIST]\n");
         sem_set_types($1, $3, PARAMETER);
         $$ = tmake( PARAM_LIST, $1, NULL );
+
     }
     | parameter_list ';' identifier_list ':' type 
     {
@@ -350,8 +380,11 @@ statement_list: statement_list ';' statement
 
 statement: variable ASSIGNOP expression 
     {
-        if (sem_check_assign($1, $3)) $$ = tmake( ASSIGNOP, $1, $3 );
-        else $$ = NULL;
+        if (!sem_check_assign($1, $3)){
+            $$ = NULL;
+        }
+        $$ = tmake( ASSIGNOP, $1, $3 );
+
     }
     | procedure_statement 
     {
@@ -409,11 +442,12 @@ statement: variable ASSIGNOP expression
             asprintf(&msg, "semantic error: variable '%s' is not declared", $2);
             yyerror(msg);
             free(msg);
-            if ( sem_get_type($2) != INTEGER ) {
-                asprintf(&msg, "semantic error: '%s' must be of type INTEGER", $2);
-                yyerror(msg);
-                free(msg);
-            }
+        }
+        if ( hash_search(symbol_tbl, $2)->type != INTEGER ) {
+            asprintf(&msg, "semantic error: '%s' must be of type INTEGER", $2);
+            yyerror(msg);
+            free(msg);
+        
         }
         // $$ = tmake( FOR, tmake( FOR_ARG, tmake_id( list ), $4), $7 );
         list = hash_search(symbol_tbl, $2);
@@ -425,28 +459,35 @@ statement: variable ASSIGNOP expression
 variable: ID '[' expression ']' 
     { 
         // fprintf(stderr, "[R-VARIABLE]\n");
-        if (is_declared(symbol_tbl, $1)) {
-            char *msg;
-            asprintf(&msg, "semantic error: variable %s not declared", $1);
+        char *msg;
+        if (!is_declared(symbol_tbl, $1)) {
+            asprintf(&msg, "semantic error: variable '%s' not declared", $1);
             yyerror(msg);
             free(msg);
         }
         if ( sem_get_type($3) != INTEGER){
-            char *msg;
-            asprintf(&msg, "semantic error: array index must be an integer recieved %d", sem_get_type($3));
+            asprintf(&msg, "semantic error: array index must be an INTEGER recieved: %s", type_to_str(sem_get_type($3)));
             yyerror(msg);
             free(msg);
         }
-        $$ = tmake( ARRAY_CALL, tmake_id( hash_search_all( symbol_tbl, $1)), $3);
+        list = hash_global_search(symbol_tbl, $1);
+        int lo = list->start_index;
+        int hi = list->end_index;
+        int val = $3->attr.ival;
+        if (hi < val || val < lo){
+            asprintf(&msg, "semantic error: index: %d is out of bounds", val);
+            yyerror(msg);
+            free(msg);
+        }
+        $$ = tmake( ARRAY_CALL, tmake_id( hash_global_search( symbol_tbl, $1)), $3);
     }
     | ID 
     { 
         // fprintf(stderr, "[R-VARIABLE]\n");
-       list = hash_search_all(symbol_tbl, $1);
-		assert(list != NULL);
+       list = hash_global_search(symbol_tbl, $1);
        if ( !is_declared( symbol_tbl, $1 ) ) {
             char *msg;
-            asprintf(&msg, "semantic error: variable %s not declared", $1);
+            asprintf(&msg, "semantic error: variable '%s' not declared", $1);
             yyerror(msg);
             free(msg);
         }
@@ -464,8 +505,13 @@ procedure_statement: ID '(' expression_list ')' {
             yyerror(msg);
             free(msg);
         }
-        
-        tree_t *id = tmake_id(hash_search_all(symbol_tbl, $1));
+        list = hash_global_search(symbol_tbl, $1);
+        if ( sem_get_argtype($3) !=  list->arg_types){
+            asprintf(&msg, "semantic error: incorrect arguments or types in procedure '%s'", $1);
+            yyerror(msg);
+            free(msg);
+        }
+        tree_t *id = tmake_id(list);
         $$ = tmake(PROC_CALL, id , $3);
     }
     | ID 
@@ -476,7 +522,7 @@ procedure_statement: ID '(' expression_list ')' {
             yyerror(msg);
             free(msg);
         }
-        $$ = tmake_id(hash_search_all(symbol_tbl, $1));
+        $$ = tmake_id(hash_global_search(symbol_tbl, $1));
 
     }
     ;
@@ -582,50 +628,66 @@ unary_exp: ADDOP factor %prec UMINUS
 
 
 factor:ID 
-    {
-        list_t *entry = hash_search_all(symbol_tbl, $1);
-        if (!entry) {
+    { 
+        list = hash_search(symbol_tbl, $1);
+        if (!list) {
             char *msg;
-            asprintf(&msg, "semantic error: ID %s not declared", $1);
+            asprintf(&msg, "semantic error: '%s' is not declared in scope", $1);
             yyerror(msg);
             free(msg);
         }
-        $$ = tmake_id(entry);
+        $$ = tmake_id(list);
     }
     | ID '(' expression_list ')' 
     {
-        list_t *entry = hash_search_all(symbol_tbl, $1);
-        if (!entry || entry->type != FUNCTION) {
-            char *msg;
-            asprintf(&msg, "semantic error: %s is not a function", $1);
+        list = hash_global_search(symbol_tbl, $1);
+        char *msg;
+
+        if (!list || list->scopetype != FUNCTION) {
+            asprintf(&msg, "semantic error: '%s' is not a function", $1);
             yyerror(msg);
             free(msg);
         }
-        tree_t *id = tmake_id(entry);
+        if (sem_get_argtype($3) != list->arg_types){
+            asprintf(&msg, "semantic error: incorrect number or type of arguments to function '%s' ", $1);
+            yyerror(msg);
+            free(msg);
+        }
+        tree_t *id = tmake_id(list);
         $$ = tmake(FUNC_CALL, id, $3);
     }
-    | ID '[' expression ']' 
+    | ID '[' range_val ']' 
     {
-        list_t *entry = hash_search_all(symbol_tbl, $1);
-        if (!entry || (entry->type != IARRAY && entry->type != RARRAY)) {
-            char *msg;
-            asprintf(&msg, "semantic error: %s is not an array", $1);
+        char *msg;
+        if (!is_declared(symbol_tbl, $1)) {
+            asprintf(&msg, "semantic error: variable '%s' not declared", $1);
             yyerror(msg);
             free(msg);
         }
-        tree_t *id = tmake_id(entry);
-        $$ = tmake(ARRAY_CALL, id, $3);
+        if ( sem_get_type($3) != INTEGER){
+            asprintf(&msg, "semantic error: array index must be an INTEGER recieved: %s", type_to_str(sem_get_type($3)));
+            yyerror(msg);
+            free(msg);
+        }
+        list = hash_global_search(symbol_tbl, $1);
+        int lo = list->start_index;
+        int hi = list->end_index;
+        int val = $3->attr.ival;
+        if (hi < val || val < lo){
+            asprintf(&msg, "semantic error: index: %d is out of bounds", val);
+            yyerror(msg);
+            free(msg);
+        }
+        $$ = tmake( ARRAY_CALL, tmake_id( hash_global_search( symbol_tbl, $1)), $3);
     }
     | INUM 
     {
         tree_t *t = tmake_inum($1); 
-        fprintf(stderr, "Inum->%d\n", t->type);
         $$ = t;
     }
     | RNUM 
     {
         tree_t *t = tmake_rnum($1); 
-        fprintf(stderr, "RNum->%d\n", t->type);
         $$ = t;
     }
     | '(' expression ')' 

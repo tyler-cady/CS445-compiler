@@ -6,6 +6,7 @@
 #include "list.h"
 #include "tree.h"
 #include "pc.tab.h"
+#include "semantic.h"
 #include "util.h"
 
 static void tree_label(tree_t *t);
@@ -63,17 +64,20 @@ tree_t *tmake_rnum(float rval) {
 tree_t *tmake_mulop(int opval, tree_t *left, tree_t *right) {
     tree_t *v = tmake(MULOP, left, right);
     v->attr.opval = opval;
+    v->type = sem_get_type(left);
     return v;
 }
 
 tree_t *tmake_addop(int opval, tree_t *left, tree_t *right) {
     tree_t *v = tmake(ADDOP, left, right);
     v->attr.opval = opval;
+    v->type = sem_get_type(left);
     return v;
 }
 
 tree_t *tmake_relop(int opval, tree_t *left, tree_t *right) {
     tree_t *v = tmake(RELOP, left, right);
+    v->type = sem_get_type(left);
     v->attr.opval = opval;
     return v;
 }
@@ -113,6 +117,8 @@ const char *type_to_str(int type){
         case BOOL:    return "BOOL";
         case VOID:    return "VOID";
         case ID_LIST: return "ID_LIST";
+        case IARRAY: return "IARRAY";
+        case RARRAY: return "RARRAY";
         default: {
             static char buffer[32];
             snprintf(buffer, sizeof(buffer), "UNKNOWN(%d)", type);
@@ -124,9 +130,6 @@ const char *type_to_str(int type){
 
 
 void tprint(tree_t *t, int spaces) {
-	char *tmp_name;
-	list_t *tmp_node;
-
     if (!t) {
         if (verbose_flag) {
             for (int i = 0; i < spaces; i++) echo(" ", verbose_flag);

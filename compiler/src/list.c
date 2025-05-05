@@ -20,9 +20,8 @@ list_t *list_make(char *name) {
     l->class = 0; 
     l->type = 0;
     l->scopetype = 0;
-    l->args = NULL;
+    l->return_type = 0;
     l->arg_types = NULL;
-    l->scope = NULL;
     l->start_index = 0;
     l->end_index = 0;
     l->next = NULL;

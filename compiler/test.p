@@ -1,7 +1,9 @@
 program main( output );
-  var i,j: integer;
-begin
-  for i := 1 to 5 do
+  var i:integer;
+  function Add(a, b:integer): integer;
   begin
-  end
+    Add:= a + b
+  end;
+begin
+  i:=Add(1,2.0)
 end.

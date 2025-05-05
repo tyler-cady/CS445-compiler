@@ -65,24 +65,10 @@ list_t *hash_insert( hash_t *table, char *name ){
 
     unsigned int index = hash_pjw(name, table->capacity);
     list_t *l;
+    l = list_insert(table->table[index], name);
+    table->table[index] = l;
+    return l;
 
-    // if (strcmp(name, "input") == 0) {
-    //     l = list_insert(table->table[index], "read");
-    //     l->class = PROCEDURE;
-    //     table->table[index] = l;
-    //     return l;
-    // } else if (strcmp(name, "output") == 0) {
-    //     l = list_insert(table->table[index], "write");
-    //     l->class = PROCEDURE;
-    //     l->arg_types = malloc(sizeof(int));
-    //     l->arg_types[0] = INTEGER;
-    //     table->table[index] = l;
-    //     return l;
-    // } else {
-        l = list_insert(table->table[index], name);
-        table->table[index] = l;
-        return l;
-    // }
 }
 
 
@@ -115,7 +101,7 @@ list_t *hash_search( hash_t *table, char *name ){
     return l;
 }
 
-list_t *hash_search_all( hash_t *table, char *name ){
+list_t *hash_global_search( hash_t *table, char *name ){
     if ( !table || !name ) return NULL;
     while ( table ) /* Traverse Scope Stack */
     {
@@ -147,7 +133,7 @@ list_t *hash_search_all_depth( hash_t *table, char *name, int *depth ){
 }
 
 list_t *hash_set_type(hash_t *table, char *name, int type, int scopetype) {
-    list_t *entry = hash_search_all(table, name);
+    list_t *entry = hash_global_search(table, name);
     if (!entry) {
         fprintf(stderr, "hash_set_type: symbol '%s' not found\n", name);
         return NULL;
@@ -158,7 +144,7 @@ list_t *hash_set_type(hash_t *table, char *name, int type, int scopetype) {
 }
 
 list_t *hash_add_bounds(hash_t *table, char *name, int start_index, int end_index) {
-    list_t *entry = hash_search_all(table, name);
+    list_t *entry = hash_global_search(table, name);
     if (!entry) {
         fprintf(stderr, "hash_add_bounds: symbol '%s' not found\n", name);
         return NULL;
@@ -169,7 +155,7 @@ list_t *hash_add_bounds(hash_t *table, char *name, int start_index, int end_inde
 }
 
 list_t *hash_init_symbol(hash_t *table, char *name){
-    list_t *entry = hash_search(table, name);
+    list_t *entry = hash_global_search(table, name);
     if (!entry) {
         fprintf(stderr, "hash init: symbol '%s' not found\n", name);
         return NULL;
@@ -179,13 +165,23 @@ list_t *hash_init_symbol(hash_t *table, char *name){
 }
 
 hash_t *hash_pop( hash_t *top ){
-    assert( top != NULL );
-    hash_t *local = top->next;
-    hash_free( top );
-    return local;
+    // assert( top != NULL );
+    // hash_t *local = top->next;
+    // hash_free( top );
+    // return local;
+    // fprintf(stderr, "\n{{POP SCOPE}}\n");
+    hash_t *tmp;
+    if( top != NULL ){
+        tmp = top;
+        top = top->next;
+        hash_free(tmp);
+        return top;
+    }
+    else return NULL;
 }
 
 hash_t *hash_push( hash_t *top ) {
+    // fprintf(stderr, "\n{{PUSH SCOPE}}\n");
     hash_t *local = hash_make();
     local->next = top;
     return local;
@@ -193,7 +189,7 @@ hash_t *hash_push( hash_t *top ) {
 
 void hash_print( hash_t *table)
 {
-    assert( table != NULL );
+    // assert( table != NULL );
     for ( int i = 0; i < MAX_CAPACITY; i++ ){
         fprintf( stderr, "%d: %s", i, get_list(table->table[i]) );
         // list_print( table->table[i] );
@@ -224,7 +220,7 @@ void hash_print( hash_t *table)
 //              case 1:
 //                  fprintf(stderr, "Enter name: ");
 //                  scanf("%s", buff);
-//                  p = hash_search_all( top, buff );
+//                  p = hash_global_search( top, buff );
 //                  if ( p ){
 //                      fprintf(stderr, "Found: %s\n", p->name);
 //                  } else {
@@ -256,7 +252,7 @@ void hash_print( hash_t *table)
 //                  fprintf(stderr, "Enter name: ");
 //                  scanf("%s", buff);
 //                  hash_set_type(top, buff, INTEGER, LOCAL);
-//                  list_t *l = hash_search_all(top, buff);
+//                  list_t *l = hash_global_search(top, buff);
 //                  fprintf(stderr, "%d\n", l->type);
 //                  break;
 //              default:
