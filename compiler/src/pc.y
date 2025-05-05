@@ -261,12 +261,26 @@ subprogram_declaration:
         $$->right = $4;
         $$->type = $1->type;
 
+        char *msg;
+        if ($1->type == FUNCTION && !is_initialized($1->left->attr.name_ptr->name)) {
+
+            asprintf(&msg, "semantic error: function '%s' does not return a value", $1->left->attr.name_ptr->name);
+            yyerror(msg);
+            free(msg);
+        }
+        if ($1->type == PROCEDURE && is_initialized($1->left->attr.name_ptr->name)) {
+            asprintf(&msg, "semantic error: procedure '%s' should not return a value", $1->left->attr.name_ptr->name);
+            yyerror(msg);
+            free(msg);
+        }
+
     }
     ;
 
 subprogram_header: FUNCTION ID 
     { 
         list = hash_insert( symbol_tbl, $2 ); 
+   
         symbol_tbl = hash_push(symbol_tbl); 
 
     }
@@ -287,13 +301,6 @@ subprogram_header: FUNCTION ID
         assert(list->arg_types != NULL);
         tree_t *t = tmake_id( list );
         sem_set_types(t, $6, FUNCTION);
-
-        // if( !list->initialized ){
-        //     asprintf(&msg, "semantic error: function '%s' does not return a value", $2);
-        //     yyerror(msg);
-        //     free(msg);
-        // }
-
         $$ = tmake( FUNCTION, t , $4);
 
     } 
@@ -307,11 +314,6 @@ subprogram_header: FUNCTION ID
             free(msg);
         }
         list = hash_insert(symbol_tbl, $2);
-        if( list->initialized ){
-            asprintf(&msg, "semantic error: procedure '%s' should not return a value", $2);
-            yyerror(msg);
-            free(msg);
-        }
         symbol_tbl = hash_push( symbol_tbl); 
     } 
     arguments ';' 

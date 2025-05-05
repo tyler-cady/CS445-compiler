@@ -161,11 +161,6 @@ int sem_check_assign(tree_t *var, tree_t *assign ){
         if( tassign == IARRAY ) tassign = INTEGER;
         if( tassign == RARRAY ) tassign = REAL;
     }
-    // if (tvar == FUNC_CALL ){
-    //     fprintf(stderr, "\n{{ FUNC CALL TVAR }}\n");
-    //     name = var->attr.name_ptr->name;
-    //     hash_init_symbol(symbol_tbl, name);
-    // }
 
     if ( assign->type == ID || assign->type == IARRAY || assign->type == RARRAY){
 
@@ -182,7 +177,8 @@ int sem_check_assign(tree_t *var, tree_t *assign ){
                 return 1;
             }
             if (list->scopetype == FUNCTION){
-                hash_init_symbol(symbol_tbl, name);
+                fprintf(stderr, "{initializing...%s}", list->name);
+                hash_init_symbol(symbol_tbl, list->name);
             }
         }
     } 
