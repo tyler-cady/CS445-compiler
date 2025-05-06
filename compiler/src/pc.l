@@ -34,7 +34,7 @@
     extern message_context_t error_warning;
     
     
-    int verbose_flag = 1;
+    int verbose_flag = 0;
 
     void echo(const char *s, int verbose_flag, ...) {
         if (verbose_flag) {

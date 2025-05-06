@@ -1,6 +1,6 @@
 program main( input, output );
-var i,j:integer;
+var i:integer;
 begin
-  read( i );
+  i := 5;
   write( i )
 end.

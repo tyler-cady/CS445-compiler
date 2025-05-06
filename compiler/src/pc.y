@@ -119,7 +119,6 @@ int main(int argc, char *argv[]);
 %left '('
 %right UMINUS
 
-
 %start start
 
 %%
@@ -568,8 +567,6 @@ procedure_statement: ID '(' expression_list ')' {
        
         tree_t *id = tmake_id(list);
         $$ = tmake(PROC_CALL, id , $3);
-        fprintf(stderr, "[[name: %s]]", $$->left->attr.name_ptr->name);
-        fprintf(stderr, "[[name: %s]]", $$->right->left->attr.name_ptr->name);
 
     }
     | ID 
@@ -781,9 +778,6 @@ io_rule: WRITE '(' out_list ')'
 
 int main(int argc, char *argv[]) {
     symbol_tbl = hash_push( symbol_tbl );
-    /* hash_insert_procedure("read", symbol_tbl);
-    hash_insert_procedure("write", symbol_tbl); */
-    fprintf(stderr, "%d", argc);
     if (argc > 1) {
         yyfilename = argv[1];  // Set filename from command-line argument
         char *valid_extensions[] = {".pas", ".p", ".pp", ".inc", ".pascal"};

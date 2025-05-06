@@ -11,8 +11,6 @@ main:
 .L1:
 	pushl	%ebp
 	movl	%esp, %ebp
-
-# BEGINING THE TREE GENCODE
 	movl	$5, %edx
 	imul	$4, %edx
 	movl	%edx, -4(%ebp)
@@ -21,8 +19,6 @@ main:
 	pushl	$.L0
 	call	printf
 	addl	$8, %esp
-
-# END THE TREE GENCODE
 	movl	$0, %eax
 	popl	%ebp
 	ret

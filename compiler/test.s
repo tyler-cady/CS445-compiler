@@ -11,13 +11,11 @@ main:
 .L1:
 	pushl	%ebp
 	movl	%esp, %ebp
-	leal	-4(%ebp), %edx
-	pushl	%edx
-	pushl	$.L0
-	call	scanf
-	addl	$8, %esp
-	movl	%edx, -8(%ebp)
-	movl	-8(%ebp), %edx
+	movl	$5, %edx
+
+# Unimplemented procedure call: i
+	movl	%edx, -4(%ebp)
+	movl	-4(%ebp), %edx
 	pushl	%edx
 	pushl	$.L0
 	call	printf

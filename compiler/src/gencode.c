@@ -298,35 +298,11 @@ void gen_the_tree(tree_t *t) {
             }
         }
       }
-        // case ASSIGNOP: {
-        //     if (!t->left || !t->right) {
-        //         fprintf(stderr, "bad assignment.\n");
-        //         break;
-        //     }
-        
-        //     list_t *entry = hash_search(symbol_tbl, t->left->attr.name_ptr->name);
-        //     if (!entry) {
-        //         fprintf(stderr, "Undefined variable: %s\n", t->left->attr.name_ptr->name);
-        //         break;
-        //     }
-        
-        //     int r = op_tree(t->right); 
-        //     t->left->reg = r;
-        //     entry->reg = r;
-        
-        //     if (t->right->type == INTEGER) {
-        //         fprintf(out, "\tmovl\t$%d, %%%s\n", t->right->attr.ival, get_reg_name(r));
-        //     }  
-        //     else {
-        //         fprintf(out, "\t# result already in %s from expression\n", get_reg_name(r));
-        //     }
-        
-        //     break;
-        // }
     
       case PROC_CALL: {
         list_t *n = hash_search(symbol_tbl, t->left->attr.name_ptr->name);
         char *name = n->name;
+
         if (strcmp(name, "read") == 0) {
             int temp_id = talloc(rstack);
             scan(temp_id);
