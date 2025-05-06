@@ -12,6 +12,7 @@
         "vector": "c",
         "__locale": "c",
         "queue": "c",
-        "stack": "c"
+        "stack": "c",
+        "semantic.h": "c"
     }
 }

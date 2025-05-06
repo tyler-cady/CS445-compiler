@@ -136,7 +136,6 @@ program:{ symbol_tbl = hash_push(symbol_tbl); } PROGRAM ID '(' progargs ')' ';' 
         tree_t* program_id = tmake_id( list );
         sem_set_types( program_id, PROCEDURE, PROCEDURE );
         tree_t *root = tmake( PROG_DECL1, program_id, $8 );
-        // generate_code( root );
         $$ = root;
     }
     ;
@@ -144,6 +143,7 @@ program:{ symbol_tbl = hash_push(symbol_tbl); } PROGRAM ID '(' progargs ')' ';' 
 program_decl: declarations subprogram_declarations compound_statement
     {
         $$ = tmake( PROG_DECL1, $1, tmake( PROG_DECL2, $2, $3 ));
+        gtt_wrap($$);
     }
     ;
 
@@ -154,7 +154,6 @@ progargs: INPUT
         list->arg_types[0] = INTEGER;
         list->arg_count = 1;
         list->scopetype = PROCEDURE;
-        gread_write();
     }
     | OUTPUT
     {
@@ -163,12 +162,13 @@ progargs: INPUT
         list->arg_types[0] = INTEGER;
         list->arg_count = 1;
         list->scopetype = PROCEDURE;
-        gread_write();
     }
     | INPUT ',' OUTPUT
     {
         list = hash_insert(symbol_tbl, "read");
         list->arg_types = malloc(sizeof(int));
+        list->arg_types[0] = INTEGER;
+        list->arg_count = 1;
         list->scopetype = PROCEDURE;
 
         list = hash_insert(symbol_tbl, "write");
@@ -177,7 +177,6 @@ progargs: INPUT
         list->arg_types[0] = INTEGER;
         list->arg_count = 1;
         list->scopetype = PROCEDURE;
-        gread_write();
     }
     ;
 identifier_list: ID 
@@ -569,6 +568,9 @@ procedure_statement: ID '(' expression_list ')' {
        
         tree_t *id = tmake_id(list);
         $$ = tmake(PROC_CALL, id , $3);
+        fprintf(stderr, "[[name: %s]]", $$->left->attr.name_ptr->name);
+        fprintf(stderr, "[[name: %s]]", $$->right->left->attr.name_ptr->name);
+
     }
     | ID 
     { 
@@ -777,51 +779,51 @@ io_rule: WRITE '(' out_list ')'
 
 %%
 
-//int main(int argc, char *argv[]) {
-//    symbol_tbl = hash_push( symbol_tbl );
-//    /* hash_insert_procedure("read", symbol_tbl);
-//    hash_insert_procedure("write", symbol_tbl); */
-//    fprintf(stderr, "%d", argc);
-//    if (argc > 1) {
-//        yyfilename = argv[1];  // Set filename from command-line argument
-//        char *valid_extensions[] = {".pas", ".p", ".pp", ".inc", ".pascal"};
-//        int valid = 0;
-//        for (int i = 0; i < 5; i++) {
-//            if (strstr(yyfilename, valid_extensions[i]) != NULL) {
-//                yyin = fopen(yyfilename, "r");
-//                valid = 1;
-//                break;
-//            }
-//        }
-//        if (!valid) {
-//            fprintf(stderr, "Invalid file extension: %s\n", yyfilename);
-//            return 1;
-//        }
-//        if (!yyin) {
-//            fprintf(stderr,"Error opening file\n");
-//            return 1;
-//        }
-//    }
-//    else {
-//        yyfilename = "input"; 
-//        yyin = stdin;  
-//    }
-//    out = fopen(replace_extension(yyfilename), "w");
-//    if (!out){
-//        perror("fopen");
-//        exit(1);
-//    }
-//    /* Parse the input */
-//    echo("\n\n****************TOKENS*****************\n\n", verbose_flag);
-//    //do {
-//        yyparse();
-//    //} while ( !feof(yyin) );
-//    if (error_count > 0) {
-//        fprintf(stderr, "Parsing failed with %d errors\n", error_count);
-//        exit(1);
-//    }
-//    fprintf( stderr, "Parsing succeeded\n" );
-//
-//	symbol_tbl = hash_pop( symbol_tbl );
-//    return 0;
-//}
+int main(int argc, char *argv[]) {
+    symbol_tbl = hash_push( symbol_tbl );
+    /* hash_insert_procedure("read", symbol_tbl);
+    hash_insert_procedure("write", symbol_tbl); */
+    fprintf(stderr, "%d", argc);
+    if (argc > 1) {
+        yyfilename = argv[1];  // Set filename from command-line argument
+        char *valid_extensions[] = {".pas", ".p", ".pp", ".inc", ".pascal"};
+        int valid = 0;
+        for (int i = 0; i < 5; i++) {
+            if (strstr(yyfilename, valid_extensions[i]) != NULL) {
+                yyin = fopen(yyfilename, "r");
+                valid = 1;
+                break;
+            }
+        }
+        if (!valid) {
+            fprintf(stderr, "Invalid file extension: %s\n", yyfilename);
+            return 1;
+        }
+        if (!yyin) {
+            fprintf(stderr,"Error opening file\n");
+            return 1;
+        }
+    }
+    else {
+        yyfilename = "input"; 
+        yyin = stdin;  
+    }
+    out = fopen(replace_extension(yyfilename), "w");
+    if (!out){
+        perror("fopen");
+        exit(1);
+    }
+    /* Parse the input */
+    echo("\n\n****************TOKENS*****************\n\n", verbose_flag);
+    //do {
+        yyparse();
+    //} while ( !feof(yyin) );
+    if (error_count > 0) {
+        fprintf(stderr, "Parsing failed with %d errors\n", error_count);
+        exit(1);
+    }
+    fprintf( stderr, "Parsing succeeded\n" );
+
+	symbol_tbl = hash_pop( symbol_tbl );
+    return 0;
+}

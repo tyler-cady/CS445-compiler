@@ -16,7 +16,8 @@ void gread_write();
 void gprintf_call(int *regs, int num_regs);
 void gscanf_call(int *regs, int num_regs);
 char *replace_extension(char *);
-void generate_code( tree_t *root );
+void gtt_wrap(tree_t *);
+void gen_the_tree(tree_t *);
 
 
 char *label();

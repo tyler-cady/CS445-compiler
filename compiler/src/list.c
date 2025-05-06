@@ -27,7 +27,7 @@ list_t *list_make(char *name) {
     l->end_index = 0;
     l->next = NULL;
     l->initialized = 0;
-
+    l->reg = 0;
     return l;
 }
 
@@ -36,6 +36,7 @@ list_t *list_make(char *name) {
 void list_free( list_t *node ){
     if ( node ){
         free( node->name );
+        free( node->arg_types);
         free( node );
     }
 }

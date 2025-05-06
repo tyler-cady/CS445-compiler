@@ -19,6 +19,7 @@ typedef struct tree_s
     int scope_depth;
     int label;
     int caller_is_parent;
+    int reg;
 
     struct tree_s *left;
     struct tree_s *right;

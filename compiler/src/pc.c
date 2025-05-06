@@ -859,7 +859,7 @@ YY_DECL
 		}
 
 	{
-#line 65 "src/pc.l"
+#line 66 "src/pc.l"
 
 
 
@@ -932,293 +932,293 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 68 "src/pc.l"
+#line 69 "src/pc.l"
 { /* Ignore comment */ }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 69 "src/pc.l"
+#line 70 "src/pc.l"
 { /* Ignore comment */ }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 71 "src/pc.l"
+#line 72 "src/pc.l"
 { echo("[PROGRAM]", verbose_flag); return PROGRAM; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 72 "src/pc.l"
+#line 73 "src/pc.l"
 { echo("[PROCEDURE]", verbose_flag); return PROCEDURE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 73 "src/pc.l"
+#line 74 "src/pc.l"
 { echo("[VAR]", verbose_flag); return VAR; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 74 "src/pc.l"
+#line 75 "src/pc.l"
 { echo("[ARRAY]", verbose_flag); return ARRAY; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 75 "src/pc.l"
+#line 76 "src/pc.l"
 { echo("[INTEGER]", verbose_flag); return INTEGER; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 76 "src/pc.l"
+#line 77 "src/pc.l"
 { echo("[REAL]", verbose_flag); return REAL; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 77 "src/pc.l"
+#line 78 "src/pc.l"
 { echo("[FUNCTION]", verbose_flag); return FUNCTION; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 78 "src/pc.l"
+#line 79 "src/pc.l"
 { echo("[END]", verbose_flag); return END; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 79 "src/pc.l"
+#line 80 "src/pc.l"
 { echo("[IF]", verbose_flag); return IF; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 80 "src/pc.l"
+#line 81 "src/pc.l"
 { echo("[OF]", verbose_flag); return OF; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 81 "src/pc.l"
+#line 82 "src/pc.l"
 { echo("[THEN]", verbose_flag); return THEN; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 82 "src/pc.l"
+#line 83 "src/pc.l"
 { echo("[WHILE]", verbose_flag); return WHILE; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 83 "src/pc.l"
+#line 84 "src/pc.l"
 { echo("[DO]", verbose_flag); return DO; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 84 "src/pc.l"
+#line 85 "src/pc.l"
 { echo("[REPEAT]", verbose_flag); return REPEAT; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 85 "src/pc.l"
+#line 86 "src/pc.l"
 { echo("[UNTIL]", verbose_flag); return UNTIL; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 86 "src/pc.l"
+#line 87 "src/pc.l"
 { echo("[BEGIN]", verbose_flag); return BEGINKW; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 87 "src/pc.l"
+#line 88 "src/pc.l"
 { echo("[ELSE]", verbose_flag); return ELSE; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 88 "src/pc.l"
+#line 89 "src/pc.l"
 { echo("[FOR]", verbose_flag); return FOR; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 89 "src/pc.l"
+#line 90 "src/pc.l"
 { echo("[NOT]", verbose_flag); return NOT; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 90 "src/pc.l"
+#line 91 "src/pc.l"
 { echo("[ADDOP: +]", verbose_flag); yylval.opval = PLUS; return ADDOP; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 91 "src/pc.l"
+#line 92 "src/pc.l"
 { echo("[ADDOP: -]", verbose_flag); yylval.opval = MINUS; return ADDOP; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 92 "src/pc.l"
+#line 93 "src/pc.l"
 { echo("[ADDOP: or]", verbose_flag); return OROP; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 93 "src/pc.l"
+#line 94 "src/pc.l"
 { echo("[RELOP: =]", verbose_flag); yylval.opval = EQ; return RELOP; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 94 "src/pc.l"
+#line 95 "src/pc.l"
 { echo("[RELOP: <", verbose_flag); yylval.opval = NE; return RELOP; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 95 "src/pc.l"
+#line 96 "src/pc.l"
 { echo("[RELOP: <]", verbose_flag); yylval.opval = LT; return RELOP; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 96 "src/pc.l"
+#line 97 "src/pc.l"
 { echo("[RELOP: <=]", verbose_flag); yylval.opval = LE; return RELOP; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 97 "src/pc.l"
+#line 98 "src/pc.l"
 { echo("[RELOP: >]", verbose_flag); yylval.opval = GT; return RELOP; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 98 "src/pc.l"
+#line 99 "src/pc.l"
 { echo("[RELOP: >=]", verbose_flag); yylval.opval = GE; return RELOP; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 99 "src/pc.l"
+#line 100 "src/pc.l"
 { echo("[MULOP: *]", verbose_flag); yylval.opval = STAR; return MULOP; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 100 "src/pc.l"
+#line 101 "src/pc.l"
 { echo("[MULOP: /]", verbose_flag); yylval.opval = SLASH; return MULOP; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 101 "src/pc.l"
+#line 102 "src/pc.l"
 { echo("[MULOP: div]", verbose_flag); yylval.opval = DIV; return MULOP; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 102 "src/pc.l"
+#line 103 "src/pc.l"
 { echo("[MULOP: mod]", verbose_flag); yylval.opval = MOD; return MULOP; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 103 "src/pc.l"
+#line 104 "src/pc.l"
 { echo("[MULOP: and]", verbose_flag); yylval.opval = ANDOP; return ANDOP; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 104 "src/pc.l"
+#line 105 "src/pc.l"
 { echo("[input]", verbose_flag); return INPUT; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 105 "src/pc.l"
+#line 106 "src/pc.l"
 { echo("[output]", verbose_flag); return OUTPUT; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 106 "src/pc.l"
+#line 107 "src/pc.l"
 { echo("[DOUBLEDOT]", verbose_flag); return DOUBLEDOT; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 107 "src/pc.l"
+#line 108 "src/pc.l"
 { echo("[TO]", verbose_flag); return TO; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 108 "src/pc.l"
+#line 109 "src/pc.l"
 { echo("[ASSIGNOP]", verbose_flag); return ASSIGNOP; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 109 "src/pc.l"
+#line 110 "src/pc.l"
 { echo("[:]", verbose_flag); yylval.opval = COLON; return ':'; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 110 "src/pc.l"
+#line 111 "src/pc.l"
 { echo("[;]", verbose_flag); yylval.opval = SEMICOLON; return ';'; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 111 "src/pc.l"
+#line 112 "src/pc.l"
 { echo("[,]", verbose_flag); yylval.opval = COMMA; return ','; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 112 "src/pc.l"
+#line 113 "src/pc.l"
 { echo("[(]", verbose_flag); yylval.opval = P; return '('; }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 113 "src/pc.l"
+#line 114 "src/pc.l"
 { echo("[)]", verbose_flag); yylval.opval = P; return ')'; }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 114 "src/pc.l"
+#line 115 "src/pc.l"
 { echo("[[]", verbose_flag); yylval.opval = B; return '['; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 115 "src/pc.l"
+#line 116 "src/pc.l"
 { echo("[]]", verbose_flag); yylval.opval = B; return ']'; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 116 "src/pc.l"
+#line 117 "src/pc.l"
 { echo("[\"]", verbose_flag); return QQ; }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 117 "src/pc.l"
+#line 118 "src/pc.l"
 { echo("[.]", verbose_flag); return '.'; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 118 "src/pc.l"
+#line 119 "src/pc.l"
 { yylval.ival = atoi(yytext); echo("[%d]", verbose_flag, yylval.ival); return INUM; }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 119 "src/pc.l"
+#line 120 "src/pc.l"
 { yylval.rval = atof(yytext); echo("[%.2f]", verbose_flag, yylval.rval); return RNUM; }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 120 "src/pc.l"
+#line 121 "src/pc.l"
 { yylval.sval = strdup(yytext); echo("[ID:%s]", verbose_flag, yylval.sval); return ID; }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 121 "src/pc.l"
+#line 122 "src/pc.l"
 { echo(" ", verbose_flag);}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 122 "src/pc.l"
+#line 123 "src/pc.l"
 { echo("\t", verbose_flag);}
 	YY_BREAK
 case 55:
 /* rule 55 can match eol */
 YY_RULE_SETUP
-#line 123 "src/pc.l"
+#line 124 "src/pc.l"
 { fprintf(stderr, "\n"); }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 124 "src/pc.l"
+#line 125 "src/pc.l"
 { return 0;}
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 125 "src/pc.l"
+#line 126 "src/pc.l"
 { echo("[ERROR: %s]",verbose_flag, yytext); yyerror("Invalid token"); }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 126 "src/pc.l"
+#line 127 "src/pc.l"
 ECHO;
 	YY_BREAK
 #line 1224 "src/pc.c"
@@ -2238,7 +2238,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 126 "src/pc.l"
+#line 127 "src/pc.l"
 
 
 int yyerror(const char *s) {

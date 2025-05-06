@@ -25,6 +25,7 @@ tree_t *tmake(int type, tree_t *left, tree_t *right) {
     node->caller_is_parent = 0;
     node->left = left ? left : NULL;
     node->right = right ? right : NULL;
+    node->reg = 0;
 
     tree_label(node);
     return node;

@@ -66,12 +66,12 @@ list_t *hash_insert( hash_t *table, char *name ){
         return NULL;
     }
 
-        unsigned int index = hash_pjw(name, table->capacity);
-        list_t *l;
-        l = list_insert(table->table[index], name);
-        table->table[index] = l;
-        fprintf(stderr, "inserting: %s", name);
-        return l;
+    unsigned int index = hash_pjw(name, table->capacity);
+    list_t *l;
+    l = list_insert(table->table[index], name);
+    table->table[index] = l;
+    // fprintf(stderr, "inserting: %s", name);
+    return l;
 
 }
 

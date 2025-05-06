@@ -1,5 +1,5 @@
 # Tyler's Dragon Assembly 
-	.file	"test.p"
+	.file	"apple.p"
 	.text
 	.section	.rodata
 .L0:
@@ -11,17 +11,18 @@ main:
 .L1:
 	pushl	%ebp
 	movl	%esp, %ebp
-	leal	-4(%ebp), %edx
-	pushl	%edx
-	pushl	$.L0
-	call	scanf
-	addl	$8, %esp
-	movl	%edx, -8(%ebp)
-	movl	-8(%ebp), %edx
-	pushl	%edx
+
+# BEGINING THE TREE GENCODE
+	movl	$5, %edx
+	imul	$4, %edx
+	movl	%edx, -4(%ebp)
+	movl	-4(%ebp), %ecx
+	pushl	%ecx
 	pushl	$.L0
 	call	printf
 	addl	$8, %esp
+
+# END THE TREE GENCODE
 	movl	$0, %eax
 	popl	%ebp
 	ret

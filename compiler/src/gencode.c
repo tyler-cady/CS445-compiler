@@ -1,11 +1,14 @@
-#include "gencode.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pc.tab.h"
-#include "reg.h"
+#include "error.h"
+#include "list.h"
+#include "tree.h"
+#include "hash.h"
 #include "util.h"
-
+#include "semantic.h"
+#include "pc.tab.h"
+#include "gencode.h"
 #include <regex.h>
 
 /* x86 32 bit asm */
@@ -36,12 +39,14 @@ void gfile_footer()
 
 void gmain_header()
 {
+    // fprintf( out, "\n# START MAIN\n");
     fprintf(out, "\t.globl\tmain\n");
     fprintf(out, "\t.type\tmain, @function\n");
     fprintf(out, "main:\n");
     fprintf(out, "%s:\n", label());
     fprintf(out, "\tpushl\t%%ebp\n");
     fprintf(out, "\tmovl\t%%esp, %%ebp\n");
+    
 }
 void gmain_footer()
 {
@@ -50,10 +55,12 @@ void gmain_footer()
     fprintf(out, "\tret\n");
     fprintf(out, "%s:\n", label());
     fprintf(out, "\t.size\tmain, .-main\n");
+    // fprintf( out, "\n# END MAIN\n");
 }
 
 void gread_write()
 {
+    // fprintf( out, "\n # GREAD_WRITE BEGIN\n");
     if (hash_search(symbol_tbl, "write") || hash_search(symbol_tbl, "read"))
     {
         fprintf(out, "\t.section\t.rodata\n");
@@ -63,6 +70,8 @@ void gread_write()
         fprintf(out, "\t.string \"%%d\\n\"\n");
         fprintf(out, "\t.text\n");
     }
+    // fprintf( out, "\n # GREAD_WRITE END\n");
+
 }
 void gprintf_call(int *regs, int num_regs)
 {
@@ -80,7 +89,6 @@ void gprintf_call(int *regs, int num_regs)
 
 void gscanf_call(int *regs, int num_regs)
 {
-    // Push arguments for scanf in reverse order
     for (int i = num_regs - 1; i >= 0; --i)
     {
         char *regname = get_reg_name(regs[i]);
@@ -93,8 +101,7 @@ void gscanf_call(int *regs, int num_regs)
     fprintf(out, "\taddl\t$%d, %%esp\n", cleanup_size);
 }
 
-char *replace_extension(char *filename)
-{
+char *replace_extension(char *filename){
     regex_t regex;
     regmatch_t pmatch[2];
     const char *pattern = "^(.*)\\.[^.]*$";
@@ -137,11 +144,13 @@ void scan(int temp_id)
 
 void print(int temp_id)
 {
+    // fprintf( out, "\n# START PRINT\n");
     int val_reg = ralloc(rstack, temp_id); // Get register to load value
     fprintf(out, "\tmovl\t-%d(%%ebp), %%%s\n", (temp_id + 1) * 4, get_reg_name(val_reg));
 
     int printf_regs[1] = {val_reg};
-    gprintf_call(printf_regs, 1); // Frees val_reg internally
+    gprintf_call(printf_regs, 1); 
+    // fprintf( out, "\n# END PRINT\n");
 }
 
 char *x86op(int opval)
@@ -163,18 +172,13 @@ char *x86op(int opval)
 
 int gencode(tree_t *n) {
     int R, R2, T;
-
     /* Case 0: leaf node — grab a register */
     if (!n->left && !n->right) {
         R = pop(rstack);
         if (n->type == ID) {
-            fprintf(out, "\tmovl\t%s, %%%s\n",
-                    n->attr.name_ptr->name,
-                    get_reg_name(R));
+            fprintf(out, "\tmovl\t%s, %%%s\n",n->attr.name_ptr->name,get_reg_name(R));
         } else {
-            fprintf(out, "\tmovl\t$%d, %%%s\n",
-                    n->attr.ival,
-                    get_reg_name(R));
+            fprintf(out, "\tmovl\t$%d, %%%s\n",n->attr.ival,get_reg_name(R));
         }
         return R;
     }
@@ -221,35 +225,146 @@ int gencode(tree_t *n) {
     tfree(rstack, T);
     return R;
 }
+void gtt_wrap( tree_t *t ){
+    char *newfname = replace_extension(yyfilename);
+    out = fopen(newfname, "w");
+    if (!out)
+    {
+        perror("fopen");
+        exit(1);
+    }
+    rstack = malloc(sizeof *rstack);
+    reg_init(rstack);
 
-int main()
-{
-   out = fopen("test.s", "w");
-   if (!out)
-   {
-       perror("fopen");
-       exit(1);
-   }
-   rstack = malloc(sizeof *rstack);
-   reg_init(rstack);
-
-   symbol_tbl = hash_push(symbol_tbl);
-   hash_insert(symbol_tbl, "read");
-   hash_insert(symbol_tbl, "write");
-   list_t *l = hash_insert(symbol_tbl, "A");
-   tree_t *n = tmake_addop(STAR, tmake_inum(5), tmake_inum(4));
-   gfile_header("test.s");
-   gread_write();
-   gmain_header();
-   int result = gencode(n);
-   int temp_id = talloc(rstack);
-   fprintf( out, "\tmovl\t%%%s, -%d(%%ebp)\n", get_reg_name(result), 4*(temp_id + 1));
-   print(temp_id); 
-   gmain_footer();
-   gfile_footer();
-
-   fprintf(stderr, "written to file\n");
-   fclose(out);
-   free(rstack);
-   return 0;
+    gfile_header(yyfilename);
+    gread_write();
+    gmain_header();
+    // fprintf(out, "\n# BEGINING THE TREE GENCODE\n");
+    gen_the_tree(t);
+    // fprintf(out, "\n# END THE TREE GENCODE\n");
+    gmain_footer();
+    gfile_footer();
+    fprintf(stderr, "written to file\n");
+    fclose(out);
+    free(rstack);
 }
+int op_tree(tree_t *t){
+    /* This is a workaround for a bug I made with type checking. Type of ops got changed to var type. */
+    if (!t->left || !t->right) {
+        return -1;
+    }
+
+    switch (t->attr.opval) {
+      case STAR:
+      case SLASH:
+        t->type = MULOP;
+        break;
+
+      case PLUS:
+      case MINUS:
+        t->type = ADDOP;  
+        break;
+
+      default:
+        fprintf(out, "\n# unimplemented op in op_tree\n");
+        return -1;
+    }
+
+    int reg = gencode(t);
+    t->type = INTEGER;
+    return reg;
+}
+
+void gen_the_tree(tree_t *t) {
+    if (!t) return;
+
+    switch (t->type) {
+      case ASSIGNOP: {
+        if(t->right->type != INTEGER && t->right->type != REAL){
+            int r = op_tree(t->right);
+            t->left->reg = r;
+            hash_search(symbol_tbl, t->left->attr.name_ptr->name)->reg = r;
+            break;
+        }
+        else {
+
+            list_t *entry = hash_search(symbol_tbl, t->left->attr.name_ptr->name);
+            int r = entry->reg;
+            if (t->right->type == INTEGER) {
+                fprintf(out, "\tmovl\t$%d, %s\n", t->right->attr.ival, get_reg_name(r));
+            }
+            else{
+                fprintf( out, "# NOT INT TYPES NOT SUPPORTED ");
+            }
+        }
+      }
+        // case ASSIGNOP: {
+        //     if (!t->left || !t->right) {
+        //         fprintf(stderr, "bad assignment.\n");
+        //         break;
+        //     }
+        
+        //     list_t *entry = hash_search(symbol_tbl, t->left->attr.name_ptr->name);
+        //     if (!entry) {
+        //         fprintf(stderr, "Undefined variable: %s\n", t->left->attr.name_ptr->name);
+        //         break;
+        //     }
+        
+        //     int r = op_tree(t->right); 
+        //     t->left->reg = r;
+        //     entry->reg = r;
+        
+        //     if (t->right->type == INTEGER) {
+        //         fprintf(out, "\tmovl\t$%d, %%%s\n", t->right->attr.ival, get_reg_name(r));
+        //     }  
+        //     else {
+        //         fprintf(out, "\t# result already in %s from expression\n", get_reg_name(r));
+        //     }
+        
+        //     break;
+        // }
+    
+      case PROC_CALL: {
+        list_t *n = hash_search(symbol_tbl, t->left->attr.name_ptr->name);
+        char *name = n->name;
+        if (strcmp(name, "read") == 0) {
+            int temp_id = talloc(rstack);
+            scan(temp_id);
+        }
+        else if (strcmp(name, "write") == 0) {
+          int r = n->reg;
+          int temp_id = talloc(rstack);
+          fprintf(out, "\tmovl\t%%%s, -%d(%%ebp)\n",get_reg_name(r),4 * (temp_id + 1));
+          print(temp_id);
+        }
+        else {
+          fprintf(out,"\n# Unimplemented procedure call: %s\n", name);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+    // fprintf(stderr, "\n{{reg_val: %d}}\n", )
+    gen_the_tree(t->left);
+    gen_the_tree(t->right);
+}
+
+
+
+//int main()
+//{
+//    yyfilename = "apple.p";
+//    symbol_tbl = hash_push(symbol_tbl);
+//    hash_insert(symbol_tbl, "read");
+//    hash_insert(symbol_tbl, "write");
+//    hash_insert(symbol_tbl, "A");
+//    tree_t *n = tmake_addop(STAR, tmake_inum(5), tmake_inum(4));
+//    tree_t *a = tmake(ASSIGNOP, tmake_id(hash_search(symbol_tbl, "A")), n);
+//    tree_t *write = tmake(PROC_CALL, tmake_id(hash_search(symbol_tbl, "write")), tmake(EXPR_LIST, tmake_id(hash_search(symbol_tbl, "A")), NULL));
+//    tree_t *parent = tmake(DECL, a, write);
+//    gtt_wrap(parent);
+//
+//
+//    return 0;
+//}

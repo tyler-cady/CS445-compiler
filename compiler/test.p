@@ -1,6 +1,6 @@
-program main( output );
-var i:integer;
+program main( input, output );
+var i,j:integer;
 begin
-  i:=8;
-  write(i)
+  read( i );
+  write( i )
 end.
