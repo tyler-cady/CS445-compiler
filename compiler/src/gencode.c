@@ -291,7 +291,7 @@ void gen_the_tree(tree_t *t) {
             list_t *entry = hash_search(symbol_tbl, t->left->attr.name_ptr->name);
             int r = entry->reg;
             if (t->right->type == INTEGER) {
-                fprintf(out, "\tmovl\t$%d, %s\n", t->right->attr.ival, get_reg_name(r));
+                fprintf(out, "\tmovl\t$%d, %%%s\n", t->right->attr.ival, get_reg_name(r));
             }
             else{
                 fprintf( out, "# NOT INT TYPES NOT SUPPORTED ");
