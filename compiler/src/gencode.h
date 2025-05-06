@@ -6,20 +6,19 @@
 #include "reg.h"
 
 
-char *Label = ".LL";
-char *EndLabel = ".LLfe";
-char *ReadIntLabel = ".LLC0";
-char *WriteIntLabel = ".LLC1";
-char *ReadRealLabel = ".LLD0";
-char *WriteRealLabel = ".LLD1";
-char *TrueLabel = ".LLt";
-char *FalseLabel = ".LLf";
+void gfile_header(char *fname);
+void gfile_footer();
+void gmain_header();
+void gmain_footer();
+void gfunc_header(tree_t *func);
+void gfunc_footer(tree_t *func);
+void gread_write();
+void gprintf_call(int *regs, int num_regs);
+void gscanf_call(int *regs, int num_regs);
+char *replace_extension(char *);
+void generate_code( tree_t *root );
 
-void file_header(char *fname);
-void file_footer();
-void write_main_header();
-void write_io();
-void write_main_footer();
-void func_header(tree_t *t);
-void func_footer(tree_t *t);
-char* opval_to_x86(int opval);
+
+char *label();
+
+

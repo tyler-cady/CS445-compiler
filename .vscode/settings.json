@@ -9,6 +9,9 @@
         "type_traits": "c",
         "deque": "c",
         "string": "c",
-        "vector": "c"
+        "vector": "c",
+        "__locale": "c",
+        "queue": "c",
+        "stack": "c"
     }
 }

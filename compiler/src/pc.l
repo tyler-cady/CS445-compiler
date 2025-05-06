@@ -10,6 +10,8 @@
     #include "error.h"
     #include "tree.h"
     #include "pc.tab.h"
+    #include "util.h"
+    #include "gencode.h"
     int yylineno;
     int yycolumn = 0;
     int tok_start;
@@ -85,8 +87,6 @@ commentparens (\(\*.*\*\))
 "else"          { echo("[ELSE]", verbose_flag); return ELSE; }
 "for"           { echo("[FOR]", verbose_flag); return FOR; }
 "not"           { echo("[NOT]", verbose_flag); return NOT; }
-"read"          { echo("[READ]", verbose_flag); return READ; }
-"write"         { echo("[WRITE]", verbose_flag); return WRITE; }
 "+"             { echo("[ADDOP: +]", verbose_flag); yylval.opval = PLUS; return ADDOP; }
 "-"             { echo("[ADDOP: -]", verbose_flag); yylval.opval = MINUS; return ADDOP; }
 "or"            { echo("[ADDOP: or]", verbose_flag); return OROP; }
@@ -101,6 +101,8 @@ commentparens (\(\*.*\*\))
 "div"           { echo("[MULOP: div]", verbose_flag); yylval.opval = DIV; return MULOP; }
 "mod"           { echo("[MULOP: mod]", verbose_flag); yylval.opval = MOD; return MULOP; }
 "and"           { echo("[MULOP: and]", verbose_flag); yylval.opval = ANDOP; return ANDOP; }
+"input"         { echo("[input]", verbose_flag); return INPUT; }
+"output"        { echo("[output]", verbose_flag); return OUTPUT; }
 ".."            { echo("[DOUBLEDOT]", verbose_flag); return DOUBLEDOT; }
 "to"            { echo("[TO]", verbose_flag); return TO; }
 ":="            { echo("[ASSIGNOP]", verbose_flag); return ASSIGNOP; }
@@ -154,6 +156,8 @@ int yyerror(const char *s) {
     fprintf(stderr, " ^");
     for (int i = 1; i < error_len; i++) fprintf(stderr, "~");
     fprintf(stderr, "\033[0m\n"); 
+    char *outfile = replace_extension(yyfilename);
+    remove(outfile);
 
     exit(1);
 }

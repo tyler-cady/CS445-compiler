@@ -10,6 +10,8 @@
 #include "tree.h"
 #include "hash.h"
 #include "semantic.h"
+#include "reg.h"
+#include "gencode.h" 
 
 #define MAX_ERRORS 1
 
@@ -23,6 +25,9 @@ extern int error_count;
 hash_t *symbol_tbl;
 list_t *list;
 tree_t *temp; 
+FILE *out; 
+// reg_t *rstack;
+
 message_context_t error_warning = {0};
 int main(int argc, char *argv[]);
 %}
@@ -75,7 +80,7 @@ int main(int argc, char *argv[]);
 %token PROCEDURE 
 %token SUBPROGRAM
 %token PROG_DECL1 PROG_DECL2
-
+%token INPUT OUTPUT
 
 %type <tval> start
 %type <tval> program 
@@ -97,6 +102,7 @@ int main(int argc, char *argv[]);
 %type <tval> subprogram_declaration subprogram_header
 %type <tval> arguments parameter_list
 %type <tval> optional_statements statement_list 
+
 
 
 
@@ -124,12 +130,14 @@ start: program
 		$$ = NULL;
     } 
     ;  
-program:{ symbol_tbl = hash_push(symbol_tbl); } PROGRAM ID '(' identifier_list ')' ';' program_decl '.' {symbol_tbl = hash_pop(symbol_tbl);}
+program:{ symbol_tbl = hash_push(symbol_tbl); } PROGRAM ID '(' progargs ')' ';' program_decl '.' {symbol_tbl = hash_pop(symbol_tbl);}
     {
         list = hash_insert( symbol_tbl, $3);
         tree_t* program_id = tmake_id( list );
         sem_set_types( program_id, PROCEDURE, PROCEDURE );
-        $$ = tmake( PROG_DECL1, program_id, $8 );
+        tree_t *root = tmake( PROG_DECL1, program_id, $8 );
+        // generate_code( root );
+        $$ = root;
     }
     ;
 
@@ -139,6 +147,39 @@ program_decl: declarations subprogram_declarations compound_statement
     }
     ;
 
+progargs: INPUT 
+    {
+        list = hash_insert(symbol_tbl, "read");
+        list->arg_types = malloc(sizeof(int));
+        list->arg_types[0] = INTEGER;
+        list->arg_count = 1;
+        list->scopetype = PROCEDURE;
+        gread_write();
+    }
+    | OUTPUT
+    {
+        list = hash_insert(symbol_tbl, "write");
+        list->arg_types = malloc(sizeof(int));
+        list->arg_types[0] = INTEGER;
+        list->arg_count = 1;
+        list->scopetype = PROCEDURE;
+        gread_write();
+    }
+    | INPUT ',' OUTPUT
+    {
+        list = hash_insert(symbol_tbl, "read");
+        list->arg_types = malloc(sizeof(int));
+        list->scopetype = PROCEDURE;
+
+        list = hash_insert(symbol_tbl, "write");
+        list->arg_types = malloc(sizeof(int));
+
+        list->arg_types[0] = INTEGER;
+        list->arg_count = 1;
+        list->scopetype = PROCEDURE;
+        gread_write();
+    }
+    ;
 identifier_list: ID 
     {
         list = hash_insert( symbol_tbl, $1 );
@@ -295,7 +336,7 @@ subprogram_header: FUNCTION ID
 
         list = hash_global_search(symbol_tbl, $2);
         assert(list != NULL);
-        list->arg_types = sem_get_argtype($4);
+        list->arg_types = sem_get_argtype($4, &list->arg_count);
         list->return_type = $6;
         // list->type = FUNCTION;
         assert(list->arg_types != NULL);
@@ -325,7 +366,7 @@ subprogram_header: FUNCTION ID
             free(msg);
         }
         list = hash_global_search(symbol_tbl, $2);
-        list->arg_types = sem_get_argtype($4);
+        list->arg_types = sem_get_argtype($4, &list->arg_count);
 
         tree_t *t = tmake_id( list );
         sem_set_types(t, PROCEDURE, PROCEDURE);
@@ -508,11 +549,24 @@ procedure_statement: ID '(' expression_list ')' {
             free(msg);
         }
         list = hash_global_search(symbol_tbl, $1);
-        if ( sem_get_argtype($3) !=  list->arg_types){
-            asprintf(&msg, "semantic error: incorrect arguments or types in procedure '%s'", $1);
+        int  ct;
+        int *args = sem_get_argtype($3, &ct);
+        if ( ct !=  list->arg_count){
+            fprintf(stderr, "ARG:%d ID:%d", ct, list->arg_count);
+            asprintf(&msg, "semantic error: incorrect number of arguments in procedure '%s'", $1);
             yyerror(msg);
             free(msg);
         }
+        if ( memcmp(args, list->arg_types, sizeof(int) * ct) != 0){
+            sem_print_argtypes(args, ct);
+            sem_print_argtypes(list->arg_types, list->arg_count);
+
+
+            asprintf(&msg, "semantic error: incorrect argument types in procedure '%s'", $1);
+            yyerror(msg);
+            free(msg);
+        }
+       
         tree_t *id = tmake_id(list);
         $$ = tmake(PROC_CALL, id , $3);
     }
@@ -645,18 +699,25 @@ factor:ID
         list = hash_global_search(symbol_tbl, $1);
         char *msg;
 
-        if (!list || list->scopetype != FUNCTION) {
-            asprintf(&msg, "semantic error: '%s' is not a function", $1);
+        if (!list || list->scopetype != FUNCTION || list->scopetype != PROCEDURE) {
+            asprintf(&msg, "semantic error: '%s' is not a function or procedure", $1);
             yyerror(msg);
             free(msg);
         }
-        if (sem_get_argtype($3) != list->arg_types){
-            asprintf(&msg, "semantic error: incorrect number or type of arguments to function '%s' ", $1);
+        int ct;
+        int *args = sem_get_argtype($3, &ct);
+        if (memcmp(args, list->arg_types, sizeof(int) * ct) != 0){
+            asprintf(&msg, "semantic error: incorrect type of arguments to procedure '%s' ", $1);
+            yyerror(msg);
+            free(msg);
+        }
+        if (args != list->arg_types){
+            asprintf(&msg, "semantic error: incorrect type of arguments to procedure '%s' ", $1);
             yyerror(msg);
             free(msg);
         }
         tree_t *id = tmake_id(list);
-        $$ = tmake(FUNC_CALL, id, $3);
+        $$ = tmake(PROC_CALL, id, $3);
     }
     | ID '[' range_val ']' 
     {
@@ -716,47 +777,51 @@ io_rule: WRITE '(' out_list ')'
 
 %%
 
-int main(int argc, char *argv[]) {
-    symbol_tbl = hash_push( symbol_tbl );
-    /* hash_insert_procedure("read", symbol_tbl);
-    hash_insert_procedure("write", symbol_tbl); */
-    fprintf(stderr, "%d", argc);
-    if (argc > 1) {
-        yyfilename = argv[1];  // Set filename from command-line argument
-        char *valid_extensions[] = {".pas", ".p", ".pp", ".inc", ".pascal"};
-        int valid = 0;
-        for (int i = 0; i < 5; i++) {
-            if (strstr(yyfilename, valid_extensions[i]) != NULL) {
-                yyin = fopen(yyfilename, "r");
-                valid = 1;
-                break;
-            }
-        }
-        if (!valid) {
-            fprintf(stderr, "Invalid file extension: %s\n", yyfilename);
-            return 1;
-        }
-        if (!yyin) {
-            fprintf(stderr,"Error opening file\n");
-            return 1;
-        }
-    }
-    else {
-        yyfilename = "input"; 
-        yyin = stdin;  
-    }
-    /* Parse the input */
-    echo("\n\n****************TOKENS*****************\n\n", verbose_flag);
-    //do {
-        yyparse();
-    //} while ( !feof(yyin) );
-    if (error_count > 0) {
-        fprintf(stderr, "Parsing failed with %d errors\n", error_count);
-        print_all_messages(&error_warning);
-        exit(1);
-    }
-    fprintf( stderr, "Parsing succeeded\n" );
-
-	symbol_tbl = hash_pop( symbol_tbl );
-    return 0;
-}
+//int main(int argc, char *argv[]) {
+//    symbol_tbl = hash_push( symbol_tbl );
+//    /* hash_insert_procedure("read", symbol_tbl);
+//    hash_insert_procedure("write", symbol_tbl); */
+//    fprintf(stderr, "%d", argc);
+//    if (argc > 1) {
+//        yyfilename = argv[1];  // Set filename from command-line argument
+//        char *valid_extensions[] = {".pas", ".p", ".pp", ".inc", ".pascal"};
+//        int valid = 0;
+//        for (int i = 0; i < 5; i++) {
+//            if (strstr(yyfilename, valid_extensions[i]) != NULL) {
+//                yyin = fopen(yyfilename, "r");
+//                valid = 1;
+//                break;
+//            }
+//        }
+//        if (!valid) {
+//            fprintf(stderr, "Invalid file extension: %s\n", yyfilename);
+//            return 1;
+//        }
+//        if (!yyin) {
+//            fprintf(stderr,"Error opening file\n");
+//            return 1;
+//        }
+//    }
+//    else {
+//        yyfilename = "input"; 
+//        yyin = stdin;  
+//    }
+//    out = fopen(replace_extension(yyfilename), "w");
+//    if (!out){
+//        perror("fopen");
+//        exit(1);
+//    }
+//    /* Parse the input */
+//    echo("\n\n****************TOKENS*****************\n\n", verbose_flag);
+//    //do {
+//        yyparse();
+//    //} while ( !feof(yyin) );
+//    if (error_count > 0) {
+//        fprintf(stderr, "Parsing failed with %d errors\n", error_count);
+//        exit(1);
+//    }
+//    fprintf( stderr, "Parsing succeeded\n" );
+//
+//	symbol_tbl = hash_pop( symbol_tbl );
+//    return 0;
+//}

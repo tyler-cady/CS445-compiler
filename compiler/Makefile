@@ -7,7 +7,7 @@ LEX    = flex
 CCFL := -std=gnu99 -D_GNU_SOURCE -c -g3 -Wall -fsanitize=address
 LDFL := -Wall -fsanitize=address -ll -ly
 
-SRCS := error.c list.c tree.c hash.c semantic.c pc.tab.c pc.c  
+SRCS := error.c list.c tree.c hash.c semantic.c reg.c gencode.c pc.tab.c pc.c    
 
 # Construct file lists
 OBJS := $(addprefix build/obj/,$(patsubst %.c,%.o,$(SRCS)))

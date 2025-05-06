@@ -17,6 +17,9 @@ hash_t *hash_make() {
     }
     t->capacity = MAX_CAPACITY;
     t->next = NULL;
+    char *label =NULL;
+    int local_ct = 0; /* Number of local vars */
+    int param_ct = 0; /* Number of params */
     memset(t->table, 0, sizeof(list_t *) * MAX_CAPACITY); 
     return t;
 }
@@ -42,7 +45,7 @@ unsigned int hash_pjw( char *s, size_t table_size )
     char *p; 
     unsigned h = 0, g;
     for ( p = s; *p != '\0'; p = p+1 )
-    {
+     {
         h = (h << 4 ) + (*p); // multiply by 16
         if (( g = h&0xf0000000)) /* If g != 0 */
         {
@@ -63,11 +66,12 @@ list_t *hash_insert( hash_t *table, char *name ){
         return NULL;
     }
 
-    unsigned int index = hash_pjw(name, table->capacity);
-    list_t *l;
-    l = list_insert(table->table[index], name);
-    table->table[index] = l;
-    return l;
+        unsigned int index = hash_pjw(name, table->capacity);
+        list_t *l;
+        l = list_insert(table->table[index], name);
+        table->table[index] = l;
+        fprintf(stderr, "inserting: %s", name);
+        return l;
 
 }
 
@@ -185,6 +189,11 @@ hash_t *hash_push( hash_t *top ) {
     hash_t *local = hash_make();
     local->next = top;
     return local;
+}
+
+hash_t *hash_top( hash_t *top ){
+    assert( top != NULL );
+    return top;
 }
 
 void hash_print( hash_t *table)

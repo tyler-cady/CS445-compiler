@@ -1,15 +1,13 @@
 #ifndef REG_H
 #define REG_H
 
-/* Structure for 64 bit x86 register stack */
 /* To be used for gencode */
 
-#define REG_COUNT 8
+#define REG_COUNT 4
 #define MAX_TEMP 128
 
 typedef enum {
-    EAX = 0, EBX = 1, ECX = 2, EDX = 3,
-    ESI = 4, EDI = 5, ESP = 6, EBP = 7
+    EDX = 0, ECX = 1, EBX = 2, EAX = 3
 } Reg;
 
 /* Struct for the register allocator */
@@ -24,15 +22,14 @@ typedef struct reg_s
     int top; /* top of the stack */
 } reg_t; 
 
-reg_t *rstack;
 
 int top( reg_t *stack );
 int pop( reg_t *stack );
-int push( int reg, reg_t *stack );
+void push( int reg, reg_t *stack );
 void swap( reg_t *stack);
 char *get_reg_name( int reg );
 void print_reg_stack( reg_t *stack );
-
+void reg_init( reg_t *stack );
 /* Temps */
 int talloc( reg_t *stack );
 int tfree( reg_t *stack, int temp );

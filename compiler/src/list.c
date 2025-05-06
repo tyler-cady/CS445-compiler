@@ -22,10 +22,12 @@ list_t *list_make(char *name) {
     l->scopetype = 0;
     l->return_type = 0;
     l->arg_types = NULL;
+    l->arg_count = 0;
     l->start_index = 0;
     l->end_index = 0;
     l->next = NULL;
     l->initialized = 0;
+
     return l;
 }
 

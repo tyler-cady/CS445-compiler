@@ -1,9 +1,6 @@
 program main( output );
-  var i:integer;
-  function Add(a, b:integer): integer;
-  begin
-    Add:= a + b
-  end;
+var i:integer;
 begin
-  i:=Add(1,2.0)
+  i:=8;
+  write(i)
 end.

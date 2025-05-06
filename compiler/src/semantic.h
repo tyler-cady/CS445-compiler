@@ -35,8 +35,9 @@ int sem_get_type(tree_t *tree);
 int sem_assert_types(tree_t *left, tree_t *right, int type_assertion);
 int sem_check_types(tree_t *left, tree_t *right);
 int sem_check_assign(tree_t *var, tree_t *assign);
-int *sem_get_argtype(tree_t *args);
+int *sem_get_argtype(tree_t *args, int *countout);
 void sem_print_argtypes(int *argtypes, int num);
+int sem_comp_args( int *, int *, int);
 /**
  * 3. Semantic rules for Statements
  * 3.1. Statements do not return values

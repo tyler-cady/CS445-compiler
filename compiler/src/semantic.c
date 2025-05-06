@@ -232,27 +232,63 @@ int count_tree_ids(tree_t *t) {
     return count;
 }
 
-int fill_argtypes(tree_t *t, int *types, int index) {
-    if (!t) return index;
+// int fill_argtypes(tree_t *t, int *types, int index) {
+//     if (!t) return index;
+//     if (t->type == ID) {
+//         types[index++] = hash_search(symbol_tbl, t->attr.name_ptr->name)->type;
+//     }
+//     if(t->left) index = fill_argtypes(t->left, types, index);
+//     if(t->right) index = fill_argtypes(t->right, types, index);
+//     return index;
+// }
+int fill_argtypes(tree_t *t, int *types, int index, int max) {
+    if (!t || index >= max) return index;
+
     if (t->type == ID) {
-        types[index++] = hash_search(symbol_tbl, t->attr.name_ptr->name)->type;
+        list_t *sym = hash_search(symbol_tbl, t->attr.name_ptr->name);
+        if (!sym) {
+            fprintf(stderr, "semantic error: undeclared identifier '%s'\n", t->attr.name_ptr->name);
+            exit(1);
+        }
+        types[index++] = sym->type;
     }
-    if(t->left) index = fill_argtypes(t->left, types, index);
-    if(t->right) index = fill_argtypes(t->right, types, index);
+
+    if (t->left) index = fill_argtypes(t->left, types, index, max);
+    if (t->right) index = fill_argtypes(t->right, types, index, max);
     return index;
 }
 
-int *sem_get_argtype(tree_t *args) {
+// int *sem_get_argtype(tree_t *args) {
+//     int count = count_tree_ids(args);
+//     int *types = malloc(count * sizeof(int));
+//     if (!types) {
+//         perror("malloc failed");
+//         exit(1);
+//     }
+//     fill_argtypes(args, types, 0);
+//     return types;
+// }
+int *sem_get_argtype(tree_t *args, int *count_out) {
     int count = count_tree_ids(args);
     int *types = malloc(count * sizeof(int));
     if (!types) {
         perror("malloc failed");
         exit(1);
     }
-    fill_argtypes(args, types, 0);
+
+    int filled = fill_argtypes(args, types, 0, count);
+    if (filled != count) {
+        fprintf(stderr, "internal error: mismatched arg count (%d != %d)\n", filled, count);
+        exit(1);
+    }
+
+    *count_out = count;
     return types;
 }
 
+// int sem_comp_args(int *a, int *b, int size){
+//     for( int i = 0; i < )
+// }
 void sem_print_argtypes(int *args, int count) {
     for (int i = 0; i < count; i++) {
         printf("arg[%d] = %d\n", i, args[i]);

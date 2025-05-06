@@ -18,12 +18,13 @@
    struct list_s *next;
 
    int *arg_types;
+   int arg_count;
    int return_type;
-
    int initialized;
    
    int start_index;     /* For arrays */
    int end_index;       /* For arrays */
+
 } list_t;
 
 /* Constructors */
